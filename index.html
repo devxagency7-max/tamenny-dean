@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="منظومة طَمّني — لوحة المتابعة الأكاديمية لعميد كلية الصيدلة (Faculty Dean Observability Portal)">
+  <title>طَمّني — لوحة متابعة عميد الكلية | Tamenny Faculty Dean</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/logo-icon.png">
+
+  <!-- Master Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <div class="app-container">
+
+    <!-- ====================================================================
+         1. SIDEBAR (280px / 88px)
+         ==================================================================== -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <a href="#dashboard" class="brand-container">
+          <img src="assets/images/logo.png" alt="Tamenny Logo" class="brand-logo">
+          <div class="brand-info">
+            <span class="brand-title">طَمّني</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- University / Faculty Institutional Badge -->
+      <div class="faculty-badge-card">
+        <div class="faculty-badge-icon">
+          <i class="bx bxs-graduation"></i>
+        </div>
+        <div class="faculty-badge-text">
+          <span class="faculty-name">كلية الصيدلة</span>
+          <span class="faculty-uni">جامعة القاهرة</span>
+        </div>
+      </div>
+
+      <!-- Sidebar Navigation Menu -->
+      <nav class="sidebar-nav">
+        <span class="nav-section-title">المتابعة والتدقيق</span>
+
+        <a class="nav-item active" data-view="dashboard">
+          <i class="bx bxs-dashboard"></i>
+          <span>الرئيسية</span>
+        </a>
+
+        <a class="nav-item" data-view="interns">
+          <i class="bx bxs-user-detail"></i>
+          <span>سجل المتدربين</span>
+          <span class="nav-item-badge" id="sidebarInternsCount">148</span>
+        </a>
+
+        <span class="nav-section-title">النظام</span>
+
+        <a class="nav-item" data-view="profile">
+          <i class="bx bxs-user-badge"></i>
+          <span>الملف الشخصي</span>
+        </a>
+
+        <a class="nav-item" data-view="settings">
+          <i class="bx bxs-institution"></i>
+          <span>ملف الكلية</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="observability-badge" title="نظام مراقبة ورصد أكاديمي لحظي">
+          <i class="bx bx-show"></i>
+          <span>المرصد الأكاديمي</span>
+        </div>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="تصغير / توسيع القائمة">
+          <i class="bx bx-chevron-right"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ====================================================================
+         2. MAIN WRAPPER (TOPBAR + CONTENT)
+         ==================================================================== -->
+    <div class="main-wrapper">
+
+      <!-- Topbar (80px, Sticky Glassmorphism) -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="page-breadcrumb">
+            <h1 class="page-title" id="pageTitle">الرئيسية</h1>
+            <p class="page-subtitle" id="pageSubtitle" style="display:none;"></p>
+          </div>
+        </div>
+
+        <!-- Global Search Input -->
+        <div class="topbar-search">
+          <i class="bx bx-search"></i>
+          <input type="text" id="topbarSearchInput" class="search-input" placeholder="بحث عن متدرب، كود، صيدلية...">
+          <span class="search-shortcut">⌘K</span>
+        </div>
+
+        <!-- Topbar Controls -->
+        <div class="topbar-actions">
+
+          <!-- Theme Toggle (Dark / Light) -->
+          <button class="action-icon-btn" id="themeToggleBtn" title="تبديل الوضع الداكن / الفاتح">
+            <i class="bx bx-moon"></i>
+          </button>
+
+          <!-- Language / Direction Toggle -->
+          <button class="action-icon-btn" id="langToggleBtn" title="تبديل اللغة والاتجاه (عربي / EN)">
+            <i class="bx bx-globe"></i>
+          </button>
+
+          <!-- Notification Bell -->
+          <button class="action-icon-btn" id="notifBellBtn" title="الإشعارات والأنشطة الجديدة"
+            onclick="App.showToast('لا توجد تنبيهات عاجلة بحاجة لتدخل', 'info')">
+            <i class="bx bx-bell"></i>
+            <span class="pulse-dot"></span>
+          </button>
+
+          <!-- Dean Profile Card -->
+          <div class="topbar-profile" onclick="App.navigateTo('profile')" title="عرض الملف الشخصي">
+            <div class="profile-avatar" id="topbarDeanAvatar">خ</div>
+            <div class="profile-info">
+              <span class="profile-name" id="topbarDeanName">أ.د. خالد السيد</span>
+              <span class="profile-role" id="topbarDeanRole">عميد الكلية</span>
+            </div>
+          </div>
+
+        </div>
+      </header>
+
+      <!-- Main Content Canvas -->
+      <main class="content-area">
+
+        <!-- ================================================================
+             SECTION 1: DASHBOARD
+             ================================================================ -->
+        <section class="view-section active" id="view-dashboard">
+
+          <!-- Hero Search & Primary Action -->
+          <div class="hero-search-card">
+            <h2 class="hero-search-title">
+              <i class="bx bx-search-alt-2" style="color:var(--primary); font-size:1.35rem;"></i>
+              البحث الفوري
+            </h2>
+            <div class="hero-search-input-box">
+              <i class="bx bx-search"></i>
+              <input type="text" id="dashboardHeroSearch" class="hero-search-input"
+                placeholder="ابحث بالاسم، رقم القيد، أو اسم الصيدلية...">
+              <span class="hero-search-kbd">⌘K</span>
+            </div>
+
+            <!-- Quick Filter Chips -->
+            <div class="filter-pills" style="margin-top: 4px;">
+              <button class="filter-pill active" data-filter="all">
+                <i class="bx bx-grid-alt"></i> الكل (148)
+              </button>
+              <button class="filter-pill" data-filter="active">
+                <i class="bx bx-pulse"></i> نشط (126)
+              </button>
+              <button class="filter-pill" data-filter="completed">
+                <i class="bx bx-check-circle"></i> مكتمل (18)
+              </button>
+              <button class="filter-pill" data-filter="risk">
+                <i class="bx bx-error-circle"></i> متابعة (4)
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Metrics Row -->
+          <div class="quick-kpi-row" style="margin-top: 20px;">
+
+            <div class="quick-kpi-tile">
+              <div>
+                <div class="quick-kpi-num" id="statTotalInterns">148</div>
+                <div class="quick-kpi-lbl">المتدربون</div>
+              </div>
+              <div class="stat-icon-wrapper primary" style="width:48px; height:48px; font-size:1.4rem;">
+                <i class="bx bxs-user-badge"></i>
+              </div>
+            </div>
+
+            <div class="quick-kpi-tile">
+              <div>
+                <div class="quick-kpi-num">4,320</div>
+                <div class="quick-kpi-lbl">العمليات</div>
+              </div>
+              <div class="stat-icon-wrapper purple" style="width:48px; height:48px; font-size:1.4rem;">
+                <i class="bx bxs-capsule"></i>
+              </div>
+            </div>
+
+            <div class="quick-kpi-tile">
+              <div>
+                <div class="quick-kpi-num">890</div>
+                <div class="quick-kpi-lbl">استشارات الشات</div>
+              </div>
+              <div class="stat-icon-wrapper success" style="width:48px; height:48px; font-size:1.4rem;">
+                <i class="bx bxs-chat"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Split: Direct Interns Table + Live Activity -->
+          <div class="split-grid-row" style="margin-top: 24px;">
+
+            <!-- Quick Interns Table -->
+            <div class="card-panel">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon"><i class="bx bxs-id-card"></i></div>
+                  <div>
+                    <h3 class="card-title">المتدربون <span id="dashInternsCount"
+                        style="color:var(--primary); font-size:0.85rem;"></span></h3>
+                    <p class="card-subtitle">الوصول المباشر لملفات الطلاب</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline" style="padding:6px 14px; font-size:0.8rem;"
+                  onclick="App.navigateTo('interns')">
+                  السجل الموسّع <i class="bx bx-chevron-left"></i>
+                </button>
+              </div>
+
+              <div class="table-responsive" style="margin-top: 6px;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>المتدرب</th>
+                      <th>العمليات</th>
+                      <th>الحالة</th>
+                      <th>الملف الطبي</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashInternsTableBody">
+                    <!-- Injected via app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Real-Time Activity Feed -->
+            <div class="card-panel">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon" style="color:var(--danger);"><i class="bx bx-broadcast"></i></div>
+                  <div>
+                    <h3 class="card-title">النشاط الميداني المباشر</h3>
+                    <p class="card-subtitle">تدفق فوري للعمليات</p>
+                  </div>
+                </div>
+                <span class="status-badge active"><span class="status-dot"></span> مباشر</span>
+              </div>
+
+              <div class="live-stream-list" id="liveActivityList">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================
+             SECTION 2: FULL INTERNS DIRECTORY
+             ================================================================ -->
+        <section class="view-section" id="view-interns">
+
+          <div class="card-panel">
+
+            <div class="card-header" style="border-bottom: 1px solid var(--border-color-subtle); padding-bottom: 16px;">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bxs-id-card"></i></div>
+                <div>
+                  <h3 class="card-title">سجل متدربي الكلية <span id="internsFilteredCount"
+                      style="color:var(--primary); font-size:0.9rem;"></span></h3>
+                  <p class="card-subtitle">متابعة الأداء وساعات التدريب</p>
+                </div>
+              </div>
+              <div class="toolbar-actions">
+                <button class="btn btn-primary" onclick="App.exportInternReport()">
+                  <i class="bx bx-printer"></i> طباعة الكشف
+                </button>
+              </div>
+            </div>
+
+            <div class="table-toolbar" style="margin-top: 14px;">
+              <div class="toolbar-search">
+                <i class="bx bx-search"></i>
+                <input type="text" id="tableSearchInput" placeholder="بحث بالاسم، رقم القيد، أو الصيدلية...">
+              </div>
+
+              <div class="filter-pills">
+                <button class="filter-pill active" data-filter="all">
+                  <i class="bx bx-grid-alt"></i> الكل
+                </button>
+                <button class="filter-pill" data-filter="active">
+                  <i class="bx bx-pulse"></i> نشط
+                </button>
+                <button class="filter-pill" data-filter="completed">
+                  <i class="bx bx-check-circle"></i> مكتمل
+                </button>
+                <button class="filter-pill" data-filter="risk">
+                  <i class="bx bx-error-circle"></i> متابعة
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="margin-top: 10px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>المتدرب</th>
+                    <th>المحافظة</th>
+                    <th>العمليات</th>
+                    <th>الحالة</th>
+                    <th>الملف الطبي</th>
+                  </tr>
+                </thead>
+                <tbody id="internsTableBody">
+                  <!-- Injected via app.js -->
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================
+             SECTION 3: FULL PAGE INTERN PROFILE & AUDIT DOSSIER (NOT A MODAL)
+             ================================================================ -->
+        <section class="view-section" id="view-intern-detail">
+
+          <!-- Back Navigation Button -->
+          <div class="page-back-nav">
+            <button class="back-btn" onclick="App.navigateBack()">
+              <i class="bx bx-right-arrow-alt"></i> العودة
+            </button>
+          </div>
+
+          <!-- Student Profile Hero Card -->
+          <div class="intern-profile-hero">
+            <div class="intern-profile-main">
+              <div class="intern-hero-avatar" id="dossierAvatar">أم</div>
+              <div>
+                <h2 class="intern-hero-name" id="dossierName">أحمد مصطفى محمود</h2>
+                <div class="intern-hero-tags">
+                  <span class="hero-tag"><i class="bx bx-id-card"></i> قيد: <strong
+                      id="dossierStudentId">20210142</strong></span>
+                  <span class="hero-tag"><i class="bx bx-graduation"></i> <span id="dossierYear">فارم دي</span></span>
+                  <span class="status-badge active" id="dossierStatus"><span class="status-dot"></span> نشط</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="intern-profile-quick-stats">
+              <div class="hero-stat-box">
+                <span class="hero-stat-val" id="dossierOps">94</span>
+                <span class="hero-stat-sub">العمليات</span>
+              </div>
+              <button class="btn btn-primary" onclick="App.exportInternReport()">
+                <i class="bx bx-printer"></i> طباعة الملف
+              </button>
+            </div>
+          </div>
+
+          <!-- Detail Navigation Tabs Bar -->
+          <div class="detail-nav-tabs" style="margin-top: 20px;">
+            <button class="detail-tab-btn active" data-dossier-tab="chats">
+              <i class="bx bx-chat"></i> محادثات المرضى
+            </button>
+            <button class="detail-tab-btn" data-dossier-tab="rx">
+              <i class="bx bx-receipt"></i> الروشتات المفحوصة
+            </button>
+            <button class="detail-tab-btn" data-dossier-tab="plans">
+              <i class="bx bx-calendar-check"></i> خطط العلاج
+            </button>
+            <button class="detail-tab-btn" data-dossier-tab="orders">
+              <i class="bx bx-package"></i> صرف الطلبات
+            </button>
+          </div>
+
+          <!-- Tab 1: Live Patient Chat Consultations Viewer -->
+          <div class="detail-pane active" id="dossierTabChats" style="margin-top: 16px;">
+            <div class="chat-observability-container">
+
+              <!-- Conversations Sidebar -->
+              <div class="chat-patients-sidebar">
+                <div class="chat-sidebar-header">
+                  <span>محادثات المرضى المباشرة</span>
+                  <span class="status-badge active" style="font-size:0.7rem;"><i class="bx bx-lock-open-alt"></i> رصد
+                    معتمد</span>
+                </div>
+                <div id="dossierChatList">
+                  <!-- Injected via app.js -->
+                </div>
+              </div>
+
+              <!-- Chat Transcript Window -->
+              <div class="chat-transcript-box">
+                <div class="chat-transcript-header">
+                  <div class="chat-transcript-patient-info">
+                    <div class="chat-patient-avatar-circle" id="chatActivePatientAvatar">مح</div>
+                    <div>
+                      <h4 style="font-weight:800; font-size:1rem; color:var(--text-heading);"
+                        id="chatActivePatientName">الحاج محمود عبد العزيز</h4>
+                      <span style="font-size:0.75rem; color:var(--primary); font-weight:700;"
+                        id="chatActivePatientMeta">62 سنة • سكر وضغط</span>
+                    </div>
+                  </div>
+                  <span class="status-badge active"><i class="bx bx-check-double"></i> استشارة صيدلانية</span>
+                </div>
+
+                <div class="chat-bubbles-scroll" id="chatBubblesContainer">
+                  <!-- Injected via app.js -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab 2: Prescriptions -->
+          <div class="detail-pane" id="dossierTabRx" style="margin-top: 16px;">
+            <div class="card-panel">
+              <div class="audit-list" id="dossierRxList">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Medication Plans -->
+          <div class="detail-pane" id="dossierTabPlans" style="margin-top: 16px;">
+            <div class="card-panel">
+              <div class="audit-list" id="dossierPlansList">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Orders -->
+          <div class="detail-pane" id="dossierTabOrders" style="margin-top: 16px;">
+            <div class="card-panel">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>كود الطلب</th>
+                      <th>تاريخ الصرف</th>
+                      <th>عدد الأصناف</th>
+                      <th>القيمة الإجمالية</th>
+                      <th>حالة الطلب بالصيدلية</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dossierOrdersTableBody">
+                    <!-- Injected via app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================================================================
+             SECTION 4: SETTINGS & FACULTY PROFILE
+             ================================================================ -->
+        <section class="view-section" id="view-settings">
+
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+            <div class="card-panel">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon"><i class="bx bxs-institution"></i></div>
+                  <div>
+                    <h3 class="card-title">بيانات الكلية</h3>
+                    <p class="card-subtitle">جامعة القاهرة — كلية الصيدلة</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
+                <div class="audit-card-item">
+                  <span class="stat-label">الجامعة</span>
+                  <span style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">جامعة القاهرة</span>
+                </div>
+                <div class="audit-card-item">
+                  <span class="stat-label">الكلية</span>
+                  <span style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">كلية الصيدلة</span>
+                </div>
+                <div class="audit-card-item">
+                  <span class="stat-label">العميد المسؤول</span>
+                  <span style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">أ.د. خالد السيد
+                    إبراهيم</span>
+                </div>
+                <div class="audit-card-item">
+                  <span class="stat-label">العام الأكاديمي</span>
+                  <span style="font-size: 1.1rem; font-weight:800; color:var(--primary);">2025 / 2026</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Export Reports Panel -->
+            <div class="card-panel">
+              <div class="card-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon"><i class="bx bxs-file-pdf"></i></div>
+                  <div>
+                    <h3 class="card-title">تصدير التقارير</h3>
+                    <p class="card-subtitle">مستخرجات رسمية</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                <button class="btn btn-outline" style="justify-content: flex-start;" onclick="App.exportInternReport()">
+                  <i class="bx bxs-report"></i> بيان درجات التدريب الميداني (PDF)
+                </button>
+                <button class="btn btn-outline" style="justify-content: flex-start;"
+                  onclick="App.showToast('تم تصدير كشف الطلاب بصيغة Excel', 'success')">
+                  <i class="bx bxs-spreadsheet"></i> كشف الطلاب الكامل (Excel)
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================
+             SECTION 5: DEAN PROFILE (ACADEMIC IDENTITY & CREDENTIALS)
+             ================================================================ -->
+        <section class="view-section" id="view-profile">
+
+          <!-- Dean Profile Hero Card -->
+          <div class="dean-profile-hero">
+            <div class="dean-profile-main">
+              <div class="dean-hero-avatar" id="profileDeanAvatar">خ</div>
+              <div class="dean-hero-info">
+                <div class="dean-hero-title-row">
+                  <h2 class="dean-hero-name" id="profileDeanName">أ.د. خالد السيد إبراهيم</h2>
+                  <span class="status-badge active"><span class="status-dot"></span> معتمد نشط</span>
+                </div>
+                <p class="dean-hero-role" id="profileDeanTitle">عميد كلية الصيدلة — جامعة القاهرة</p>
+                <p class="dean-hero-degree" id="profileDeanDegree">أستاذ الكيمياء الحيوية والرقابة الدوائية</p>
+                <div class="dean-hero-tags">
+                  <span class="hero-tag"><i class="bx bx-calendar"></i> العام الأكاديمي: <strong>2025 / 2026</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="dean-profile-actions">
+              <button class="btn btn-primary" onclick="App.openEditProfileModal()">
+                <i class="bx bx-edit-alt"></i> تعديل البيانات
+              </button>
+              <button class="btn btn-outline-danger" onclick="App.logout()">
+                <i class="bx bx-log-out"></i> خروج
+              </button>
+            </div>
+          </div>
+
+          <!-- Academic & Office Contact Details Card -->
+          <div class="card-panel" style="margin-top: 24px;">
+            <div class="card-header">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bxs-id-card"></i></div>
+                <div>
+                  <h3 class="card-title">بيانات الاعتماد والمكتب</h3>
+                  <p class="card-subtitle">المعلومات الرسمية لعميد الكلية</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-details-grid">
+              <div class="profile-detail-item">
+                <span class="detail-label"><i class="bx bx-envelope"></i> البريد الأكاديمي</span>
+                <span class="detail-value" id="profileDeanEmail">dean.pharmacy@cu.edu.eg</span>
+              </div>
+
+              <div class="profile-detail-item">
+                <span class="detail-label"><i class="bx bx-phone"></i> الهاتف المباشر</span>
+                <span class="detail-value" id="profileDeanPhone" dir="ltr">+20 2 3567 6100</span>
+              </div>
+
+              <div class="profile-detail-item" style="grid-column: span 2;">
+                <span class="detail-label"><i class="bx bx-map-pin"></i> مقر المكتب</span>
+                <span class="detail-value" id="profileDeanOffice">المبنى الإداري - قصر العيني، القاهرة</span>
+              </div>
+
+              <div class="profile-detail-item">
+                <span class="detail-label"><i class="bx bx-buildings"></i> المؤسسة</span>
+                <span class="detail-value">جامعة القاهرة — كلية الصيدلة</span>
+              </div>
+
+              <div class="profile-detail-item">
+                <span class="detail-label"><i class="bx bx-certification"></i> الاعتماد القومي</span>
+                <span class="detail-value" style="color:var(--success);"><i class="bx bx-check-circle"></i> معتمد NAQAAE</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div class="modal-overlay" id="editProfileModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="card-header-left">
+          <div class="card-header-icon"><i class="bx bx-edit"></i></div>
+          <div>
+            <h3 class="card-title" style="font-size:1.15rem;">تعديل بيانات التواصل</h3>
+            <p class="card-subtitle">البريد والهاتف والمقر الرسمي</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="App.closeEditProfileModal()">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <form id="editProfileForm" onsubmit="App.saveProfileDetails(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:16px;">
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;">البريد الأكاديمي</label>
+          <div class="form-input-wrapper" style="position:relative; display:flex; align-items:center;">
+            <i class="bx bx-envelope" style="position:absolute; inset-inline-start:14px; color:var(--text-light); font-size:1.2rem;"></i>
+            <input type="email" id="editDeanEmail" class="form-input" style="width:100%; padding:11px 14px 11px 40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-family:inherit;" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;">الهاتف المباشر</label>
+          <div class="form-input-wrapper" style="position:relative; display:flex; align-items:center;">
+            <i class="bx bx-phone" style="position:absolute; inset-inline-start:14px; color:var(--text-light); font-size:1.2rem;"></i>
+            <input type="text" id="editDeanPhone" class="form-input" dir="ltr" style="width:100%; padding:11px 14px 11px 40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-family:inherit;" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;">مقر المكتب</label>
+          <div class="form-input-wrapper" style="position:relative; display:flex; align-items:center;">
+            <i class="bx bx-map-pin" style="position:absolute; inset-inline-start:14px; color:var(--text-light); font-size:1.2rem;"></i>
+            <input type="text" id="editDeanOffice" class="form-input" style="width:100%; padding:11px 14px 11px 40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-family:inherit;" required>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="App.closeEditProfileModal()">إلغاء</button>
+          <button type="submit" class="btn btn-primary"><i class="bx bx-check"></i> حفظ التغييرات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

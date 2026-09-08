@@ -1,0 +1,20 @@
+{
+  "name": "tamenny-faculty-dean-portal",
+  "version": "1.0.0",
+  "description": "Tamenny Healthcare & Telepharmacy — Faculty Dean Observability Web Portal",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx -y serve . -l 3000",
+    "dev": "npx -y serve . -l 3000",
+    "serve": "python3 -m http.server 3000"
+  },
+  "keywords": [
+    "tamenny",
+    "faculty-dean",
+    "pharmacy-intern",
+    "healthcare",
+    "telepharmacy"
+  ],
+  "author": "Tamenny Healthcare Systems",
+  "license": "UNLICENSED"
+}
