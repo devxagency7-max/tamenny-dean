@@ -14,111 +14,51 @@
   <link rel="stylesheet" href="css/login.css">
 </head>
 
-<body>
+<body class="login-body">
 
-  <!-- Ambient Lighting Blobs -->
-  <div class="login-ambient-bg">
-    <div class="ambient-blob blob-1"></div>
-    <div class="ambient-blob blob-2"></div>
-  </div>
-
-  <!-- Top Floating Controls (Theme & Language) -->
-  <div class="login-top-controls">
-    <button class="control-icon-btn" id="loginThemeBtn" title="تبديل الوضع الليلي / الفاتح">
-      <i class="bx bx-moon"></i>
-    </button>
-    <button class="control-icon-btn" id="loginLangBtn" title="تبديل اللغة (عربي / English)">
-      <i class="bx bx-globe"></i>
-    </button>
-  </div>
-
-  <!-- Main Login Card Container -->
-  <main class="login-container">
+  <div class="login-container">
     <div class="login-card">
 
-      <!-- Brand & Title Header -->
-      <div class="login-brand-header">
-        <div class="brand-badge">
-          <img src="assets/images/logo.png" alt="Tamenny">
-          <span>طَمّني</span>
-        </div>
-        <h1 class="login-title">بوابة عميد الكلية</h1>
-        <p class="login-subtitle">
-          المرصد الأكاديمي
-          <span class="authority-pill"><i class="bx bx-shield-quarter"></i> تدقيق معتمد</span>
-        </p>
+      <div class="logo-container">
+        <img src="assets/images/logo.png" alt="Tamenny">
       </div>
 
-      <!-- Authentication Form -->
+      <h1 class="login-title">بوابة عميد الكلية</h1>
+      <p class="login-subtitle">المرصد الأكاديمي — طَمّني</p>
+
       <form id="deanLoginForm" class="login-form">
 
         <!-- Email Field -->
-        <div class="form-group">
-          <label class="form-label" for="deanEmail">البريد الأكاديمي</label>
-          <div class="form-input-wrapper">
-            <i class="bx bx-envelope input-icon"></i>
-            <input type="email" id="deanEmail" class="form-input" placeholder="dean.pharmacy@cu.edu.eg"
+        <div class="input-group">
+          <label for="deanEmail">البريد الأكاديمي</label>
+          <div class="input-wrapper">
+            <i class="bx bx-envelope"></i>
+            <input type="email" id="deanEmail" placeholder="dean.pharmacy@cu.edu.eg"
               value="dean.pharmacy@cu.edu.eg" required autocomplete="username">
           </div>
         </div>
 
         <!-- Password Field -->
-        <div class="form-group">
-          <label class="form-label" for="deanPassword">كلمة المرور</label>
-          <div class="form-input-wrapper">
-            <i class="bx bx-lock-alt input-icon"></i>
-            <input type="password" id="deanPassword" class="form-input" placeholder="••••••••••••"
+        <div class="input-group">
+          <label for="deanPassword">كلمة المرور</label>
+          <div class="input-wrapper">
+            <i class="bx bx-lock-alt"></i>
+            <input type="password" id="deanPassword" placeholder="••••••••••••"
               value="TamennyDean@2026" required autocomplete="current-password">
-            <button type="button" class="toggle-password-btn" id="togglePasswordBtn" title="إظهار / إخفاء كلمة المرور">
-              <i class="bx bx-hide"></i>
-            </button>
           </div>
         </div>
 
-        <!-- Options: Remember & Status -->
-        <div class="form-options">
-          <label class="remember-label">
+        <div class="login-options">
+          <label class="remember-me">
             <input type="checkbox" id="rememberMe" checked>
             <span>تذكر الجلسة</span>
           </label>
-          <div class="observability-hint">
-            <i class="bx bx-show-alt"></i>
-            <span>رصد حي فقط</span>
-          </div>
         </div>
 
-        <!-- Submit Button -->
-        <button type="submit" class="btn-submit" id="loginSubmitBtn">
-          <i class="bx bx-log-in-circle"></i>
-          <span>دخول المرصد الأكاديمي</span>
-        </button>
-
-        <!-- Divider -->
-        <div class="divider-box">
-          <span class="divider-line"></span>
-          <span class="divider-text">أو</span>
-          <span class="divider-line"></span>
-        </div>
-
-        <!-- Quick 1-Click Demo Login -->
-        <button type="button" class="btn-demo-quick" id="quickDemoLoginBtn">
-          <i class="bx bx-zap"></i>
-          <span>دخول تجريبي سريع</span>
-        </button>
-
+        <button type="submit" class="btn-login" id="loginSubmitBtn">دخول المرصد الأكاديمي</button>
       </form>
 
-      <!-- Institutional Footer Info -->
-      <div class="login-institutional-info">
-        <div class="inst-badge">
-          <i class="bx bxs-graduation"></i>
-          <span>صيدلة جامعة القاهرة</span>
-        </div>
-        <span>2025 / 2026</span>
-      </div>
-
-      <!-- DevX Branding -->
-      <div class="login-devx-footer">
+      <div class="login-footer">
         <span>تطوير المنظومة بواسطة</span>
         <a href="https://devsmartx.com" target="_blank" rel="noopener" class="devx-link" title="DevX Systems">
           <img src="assets/images/devx_logo.jpeg" alt="DevX" class="devx-logo">
@@ -126,7 +66,10 @@
       </div>
 
     </div>
-  </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="loginToast" class="login-toast"></div>
 
   <!-- Login Logic -->
   <script src="js/config.js"></script>

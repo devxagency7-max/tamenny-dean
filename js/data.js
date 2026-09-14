@@ -16,6 +16,29 @@ const DeanData = {
     totalLoggedHours: 36420,
     requiredHoursPerStudent: 300,
     complianceRate: 97.4,
+    // Fields matching GET /dean/dashboard/summary (Part 9.3 of the backend spec)
+    totalEnrolledStudents: 148,
+    activelyInTraining: 126,
+    completedInternships: 18,
+    inactiveStudents: 4,
+    totalHoursLogged: 36420,
+    totalPrescriptionReviewsLogged: 1840,
+    totalMedicationPlansDrafted: 620,
+    activePartnerBranches: 74,
+    activeSupervisors: 58,
+    averageClinicalCompetencyScore: 4.6,
+  },
+
+  // Matches GET /dean/dashboard/internship-progress
+  internshipProgress: {
+    hoursBrackets: {
+      zeroToTwentyFivePercent: 12,
+      twentySixToFiftyPercent: 34,
+      fiftyOneToSeventyFivePercent: 46,
+      seventySixToNinetyNinePercent: 38,
+      completedOneHundredPercent: 18,
+    },
+    averageDaysToCompletion: 92.3,
   },
 
   pharmacyChains: [
@@ -37,12 +60,60 @@ const DeanData = {
       branchName: 'فرع المعادي (شارع النصر)',
       governorate: 'القاهرة',
       supervisorName: 'د. طارق نبيل (صيدلي أول)',
+      supervisorLicenseNumber: 'PH-2016-4471',
       startDate: '2026-01-10',
+      expectedEndDate: '2026-05-10',
       loggedHours: 260,
+      verifiedHours: 252,
       targetHours: 300,
       status: 'active', // active, completed, pending, risk
       rating: 4.9,
       operationsCount: 94,
+      nationalId: '29901011234567',
+      gpa: 3.72,
+      enrollmentYear: 2021,
+      documents: [
+        { type: 'NationalIdFront', url: 'assets/images/logo-icon.png' },
+        { type: 'InternshipCard', url: 'assets/images/logo-icon.png' }
+      ],
+      // InternClinicalDrafts — supervisor-reviewed drafts (Part 8 / Part 10.7 of the backend spec).
+      // Supersedes treating prescriptions[]/medicationPlans[] below as final approved actions.
+      clinicalOperations: [
+        {
+          draftId: 'drf-101-1',
+          entityKind: 'PrescriptionReview',
+          targetEntityId: 'rx-501',
+          internClinicalNotes: 'تمت مراجعة الجرعات والتحقق من عدم وجود تداخلات دوائية بين Sitagliptin و Bisoprolol، وتم توجيه المريض بتناول Glucophage وسط الوجبة لمنع الاضطرابات الهضمية.',
+          supervisorStatus: 'Approved',
+          supervisorFeedback: 'مراجعة دقيقة وشاملة، التزام ممتاز بالبروتوكول.',
+          supervisorName: 'د. طارق نبيل',
+          createdAt: '2026-03-05T10:30:00Z',
+          reviewedAt: '2026-03-05T11:10:00Z'
+        },
+        {
+          draftId: 'drf-101-2',
+          entityKind: 'MedicationPlan',
+          targetEntityId: 'pl-201',
+          internClinicalNotes: 'جدول تنظيم جرعات السكر وضغط الدم لمريض مسن مع تباعد زمني بين الأدوية.',
+          supervisorStatus: 'PendingSupervisorReview',
+          supervisorFeedback: null,
+          supervisorName: 'د. طارق نبيل',
+          createdAt: '2026-03-06T09:00:00Z',
+          reviewedAt: null
+        }
+      ],
+      // TrainingEvaluations — monthly supervisor competency scoring (Part 10.9 of the backend spec, new section).
+      evaluations: [
+        {
+          id: 'ev-101-1',
+          clinicalKnowledgeScore: 5,
+          communicationScore: 5,
+          ethicsAndDisciplineScore: 5,
+          overallScore: 4.9,
+          supervisorComments: 'أداء متميز في التعامل مع الحالات المزمنة، والتزام صارم بأخلاقيات المهنة.',
+          evaluatedAt: '2026-02-28T12:00:00Z'
+        }
+      ],
       prescriptions: [
         {
           id: 'rx-501',

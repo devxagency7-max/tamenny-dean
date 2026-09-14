@@ -2390,4 +2390,112 @@ body {
   margin-top: 8px;
 }
 
+/* ====================================================================
+   NEW: Document Chips (View-only academic credentials)
+   ==================================================================== */
+.document-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.document-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: var(--primary-glow);
+  color: var(--primary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: var(--transition-fast);
+}
+
+.document-chip:hover {
+  border-color: var(--primary-mid);
+  background: var(--bg-card);
+}
+
+/* ====================================================================
+   NEW: Internship Progress Distribution Bars (dean/dashboard/internship-progress)
+   ==================================================================== */
+.progress-bracket-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+}
+
+.progress-bracket-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: var(--font-latin);
+}
+
+.progress-bracket-track {
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.progress-bracket-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--primary-light), var(--primary));
+  transition: width 0.5s ease;
+}
+
+.progress-bracket-val {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  text-align: center;
+}
+
+/* ====================================================================
+   NEW: Supervisor Evaluation Score Bars (TrainingEvaluations)
+   ==================================================================== */
+.eval-score-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 50px;
+  align-items: center;
+  gap: 10px;
+}
+
+.eval-score-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.eval-score-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.eval-score-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--success), var(--success));
+  opacity: 0.85;
+}
+
+.eval-score-val {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--success-text, var(--success));
+  text-align: center;
+  font-family: var(--font-latin);
+}
+
 

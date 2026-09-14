@@ -189,8 +189,8 @@
 
             <div class="quick-kpi-tile">
               <div>
-                <div class="quick-kpi-num">4,320</div>
-                <div class="quick-kpi-lbl">العمليات</div>
+                <div class="quick-kpi-num" id="statTotalOperations">4,320</div>
+                <div class="quick-kpi-lbl">العمليات السريرية</div>
               </div>
               <div class="stat-icon-wrapper purple" style="width:48px; height:48px; font-size:1.4rem;">
                 <i class="bx bxs-capsule"></i>
@@ -199,14 +199,30 @@
 
             <div class="quick-kpi-tile">
               <div>
-                <div class="quick-kpi-num">890</div>
-                <div class="quick-kpi-lbl">استشارات الشات</div>
+                <div class="quick-kpi-num" id="statComplianceRate">97.4%</div>
+                <div class="quick-kpi-lbl">متوسط تقييم الكفاءة</div>
               </div>
               <div class="stat-icon-wrapper success" style="width:48px; height:48px; font-size:1.4rem;">
                 <i class="bx bxs-chat"></i>
               </div>
             </div>
 
+          </div>
+
+          <!-- Internship Progress Distribution (dean/dashboard/internship-progress) -->
+          <div class="card-panel" style="margin-top: 20px;">
+            <div class="card-header">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bx-bar-chart-alt-2"></i></div>
+                <div>
+                  <h3 class="card-title">توزيع نسب إنجاز ساعات التدريب</h3>
+                  <p class="card-subtitle">متوسط أيام الإنجاز: <strong id="internshipProgressAvgDays">—</strong></p>
+                </div>
+              </div>
+            </div>
+            <div id="internshipProgressBars" style="margin-top: 10px;">
+              <!-- Injected via app.js -->
+            </div>
           </div>
 
           <!-- Split: Direct Interns Table + Live Activity -->
@@ -358,6 +374,9 @@
                   <span class="hero-tag"><i class="bx bx-graduation"></i> <span id="dossierYear">فارم دي</span></span>
                   <span class="status-badge active" id="dossierStatus"><span class="status-dot"></span> نشط</span>
                 </div>
+                <div class="document-chip-row" id="dossierDocumentsList" style="margin-top:8px;">
+                  <!-- Injected via app.js -->
+                </div>
               </div>
             </div>
 
@@ -365,6 +384,10 @@
               <div class="hero-stat-box">
                 <span class="hero-stat-val" id="dossierOps">94</span>
                 <span class="hero-stat-sub">العمليات</span>
+              </div>
+              <div class="hero-stat-box">
+                <span class="hero-stat-val" id="dossierHours">260 / 300</span>
+                <span class="hero-stat-sub">ساعات التدريب</span>
               </div>
               <button class="btn btn-primary" onclick="App.exportInternReport()">
                 <i class="bx bx-printer"></i> طباعة الملف
@@ -385,6 +408,12 @@
             </button>
             <button class="detail-tab-btn" data-dossier-tab="orders">
               <i class="bx bx-package"></i> صرف الطلبات
+            </button>
+            <button class="detail-tab-btn" data-dossier-tab="attendance">
+              <i class="bx bx-time-five"></i> سجل الحضور
+            </button>
+            <button class="detail-tab-btn" data-dossier-tab="evaluations">
+              <i class="bx bx-star"></i> تقييمات المشرف
             </button>
           </div>
 
@@ -463,6 +492,24 @@
                     <!-- Injected via app.js -->
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 5: Attendance / Training Hours Log -->
+          <div class="detail-pane" id="dossierTabAttendance" style="margin-top: 16px;">
+            <div class="card-panel">
+              <div class="audit-list" id="dossierAttendanceList">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 6: Supervisor Competency Evaluations -->
+          <div class="detail-pane" id="dossierTabEvaluations" style="margin-top: 16px;">
+            <div class="card-panel">
+              <div class="audit-list" id="dossierEvaluationsList">
+                <!-- Injected via app.js -->
               </div>
             </div>
           </div>

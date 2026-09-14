@@ -29,8 +29,13 @@ const DeanConfig = {
   endpoints: {
     deanMe: '/dean/me',
     summary: '/dean/dashboard/summary',
+    activityFeed: '/dean/dashboard/activity-feed',
+    internshipProgress: '/dean/dashboard/internship-progress',
     interns: '/dean/interns',
     internDetail: (id) => `/dean/interns/${id}`,
-    internOperations: (id) => `/dean/interns/${id}/operations`,
+    internClinicalOperations: (id) => `/dean/interns/${id}/clinical-operations`,
+    internActivityLogs: (id) => `/dean/interns/${id}/activity-logs`,
+    internChats: (id) => `/dean/interns/${id}/chats`,
+    partnerPharmacies: '/dean/partner-pharmacies',
   }
 };

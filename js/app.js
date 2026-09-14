@@ -18,11 +18,22 @@ const App = {
   searchQuery: '',
 
   async init() {
+    if (!this.requireAuth()) return;
     this.initTheme();
     this.initDirection();
     this.bindEvents();
     this.handleRoute();
     await this.loadInitialData();
+  },
+
+  // --- Route Guard ---
+  requireAuth() {
+    const token = localStorage.getItem('tameny_dean_token');
+    if (!token) {
+      window.location.href = 'login.html';
+      return false;
+    }
+    return true;
   },
 
   // --- Theme Management ---
@@ -285,12 +296,28 @@ const App = {
     const local = localStorage.getItem('tameny_dean_profile');
     if (local) {
       try {
-        return { ...DeanConfig.currentDean, ...JSON.parse(local) };
+        const parsed = JSON.parse(local);
+        return { ...DeanConfig.currentDean, ...this._normalizeDeanProfile(parsed) };
       } catch (e) {
         return DeanConfig.currentDean;
       }
     }
     return DeanConfig.currentDean;
+  },
+
+  // Maps the real /dean/me response shape (nested university/faculty objects)
+  // onto the flat field names the rest of the UI expects.
+  _normalizeDeanProfile(raw) {
+    if (!raw) return {};
+    const normalized = { ...raw };
+    if (raw.university && typeof raw.university === 'object') {
+      normalized.university = raw.university.nameAr || raw.university.nameEn;
+    }
+    if (raw.faculty && typeof raw.faculty === 'object') {
+      normalized.faculty = raw.faculty.nameAr || raw.faculty.nameEn;
+      normalized.facultyId = raw.faculty.id || normalized.facultyId;
+    }
+    return normalized;
   },
 
   renderDeanProfile() {
@@ -342,19 +369,21 @@ const App = {
     if (modal) modal.classList.remove('active');
   },
 
-  saveProfileDetails(e) {
+  async saveProfileDetails(e) {
     e.preventDefault();
     const emailInput = document.getElementById('editDeanEmail');
     const phoneInput = document.getElementById('editDeanPhone');
     const officeInput = document.getElementById('editDeanOffice');
 
-    const updated = {
-      ...this.getStoredDeanData(),
+    const payload = {
       email: emailInput ? emailInput.value.trim() : DeanConfig.currentDean.email,
       phone: phoneInput ? phoneInput.value.trim() : DeanConfig.currentDean.phone,
       office: officeInput ? officeInput.value.trim() : DeanConfig.currentDean.office
     };
 
+    await DeanApiService.updateDeanProfile(payload);
+
+    const updated = { ...this.getStoredDeanData(), ...payload };
     localStorage.setItem('tameny_dean_profile', JSON.stringify(updated));
     this.renderDeanProfile();
     this.closeEditProfileModal();
@@ -368,6 +397,7 @@ const App = {
   logout() {
     localStorage.removeItem('tameny_dean_token');
     localStorage.removeItem('tameny_dean_session_at');
+    localStorage.removeItem('tameny_dean_demo_mode');
     this.showToast('تم تسجيل الخروج بنجاح', 'info');
     setTimeout(() => {
       window.location.href = 'login.html?reauth=1';
@@ -376,31 +406,88 @@ const App = {
 
   // --- Render Dashboard ---
   async renderDashboard() {
-    const k = DeanData.kpis;
-    this.animateCount('statTotalInterns', k.totalInterns);
+    const k = await DeanApiService.getDashboardSummary();
+    this.animateCount('statTotalInterns', k.totalEnrolledStudents ?? k.totalInterns ?? 0);
+
+    const opsEl = document.getElementById('statTotalOperations');
+    if (opsEl) {
+      const totalOps = (k.totalPrescriptionReviewsLogged ?? k.totalRxReviewed ?? 0) + (k.totalMedicationPlansDrafted ?? k.totalPlansCreated ?? 0);
+      opsEl.textContent = totalOps.toLocaleString('ar-EG');
+    }
+
+    const complianceEl = document.getElementById('statComplianceRate');
+    if (complianceEl) {
+      const rate = k.averageClinicalCompetencyScore
+        ? `${k.averageClinicalCompetencyScore.toFixed(1)} / 5`
+        : `${(k.complianceRate ?? 0)}%`;
+      complianceEl.textContent = rate;
+    }
 
     this.renderDashboardInterns();
+    this.renderInternshipProgress();
 
     // Render Live Activity Feed
     const feedEl = document.getElementById('liveActivityList');
     if (feedEl) {
-      feedEl.innerHTML = DeanData.liveFeed.map(item => `
+      const feed = await DeanApiService.getActivityFeed(8);
+      feedEl.innerHTML = feed.map(item => {
+        const studentName = item.studentName || item.name || '';
+        return `
         <div class="live-stream-item">
-          <div class="stream-avatar">${item.studentName.slice(0, 2)}</div>
+          <div class="stream-avatar">${item.avatarInitial || studentName.slice(0, 2)}</div>
           <div class="stream-content">
             <div class="stream-title-row">
-              <span class="stream-student-name">${item.studentName}</span>
-              <span class="stream-time">${item.time}</span>
+              <span class="stream-student-name">${studentName}</span>
+              <span class="stream-time">${item.time || ''}</span>
             </div>
             <span class="stream-action-desc">${item.action} — ${item.pharmacy}</span>
-            <span class="stream-action-desc" style="font-size:0.75rem; opacity:0.85;">${item.detail}</span>
+            <span class="stream-action-desc" style="font-size:0.75rem; opacity:0.85;">${item.detail || ''}</span>
             <div class="stream-badge-row">
               <span class="stream-badge ${item.type}">${item.type === 'rx' ? 'فحص روشتة' : item.type === 'plan' ? 'خطة علاج' : 'صرف طلب'}</span>
-              <span style="font-size:0.68rem; color:var(--text-light);"><i class="bx bx-check-double"></i> موثق</span>
+              <span style="font-size:0.68rem; color:var(--text-light);"><i class="bx bx-check-double"></i> ${item.supervisorVerified === false ? 'بانتظار الاعتماد' : 'موثق'}</span>
             </div>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
+    }
+  },
+
+  // --- Render Internship Progress Distribution (Part 9.3 dashboard/internship-progress) ---
+  async renderInternshipProgress() {
+    const container = document.getElementById('internshipProgressBars');
+    const avgEl = document.getElementById('internshipProgressAvgDays');
+    if (!container) return;
+
+    const progress = await DeanApiService.getInternshipProgress();
+    const brackets = progress.hoursBrackets || {};
+    const bracketDefs = [
+      { key: 'zeroToTwentyFivePercent', label: '٠-٢٥٪' },
+      { key: 'twentySixToFiftyPercent', label: '٢٦-٥٠٪' },
+      { key: 'fiftyOneToSeventyFivePercent', label: '٥١-٧٥٪' },
+      { key: 'seventySixToNinetyNinePercent', label: '٧٦-٩٩٪' },
+      { key: 'completedOneHundredPercent', label: '١٠٠٪ مكتمل' },
+    ];
+    const maxVal = Math.max(1, ...bracketDefs.map(b => brackets[b.key] || 0));
+
+    container.innerHTML = bracketDefs.map(b => {
+      const val = brackets[b.key] || 0;
+      const pct = Math.round((val / maxVal) * 100);
+      return `
+        <div class="progress-bracket-row">
+          <span class="progress-bracket-label">${b.label}</span>
+          <div class="progress-bracket-track">
+            <div class="progress-bracket-fill" style="width:${pct}%;"></div>
+          </div>
+          <span class="progress-bracket-val">${val}</span>
+        </div>
+      `;
+    }).join('');
+
+    if (avgEl) {
+      avgEl.textContent = progress.averageDaysToCompletion
+        ? `${progress.averageDaysToCompletion.toFixed(1)} يوم`
+        : '—';
     }
   },
 
@@ -544,6 +631,21 @@ const App = {
       this.showToast('لم يتم العثور على ملف المتدرب', 'warning');
       return;
     }
+
+    // Fetch the observational sub-resources (clinical drafts, chats, attendance)
+    // separately, matching the real backend's per-resource endpoints (Part 9.2 spec).
+    // For local demo data, api.js already populates these directly on the intern object,
+    // so only fetch if they weren't already provided by getInternDetail().
+    if (!intern.clinicalOperations || intern.clinicalOperations.length === 0) {
+      intern.clinicalOperations = await DeanApiService.getInternClinicalOperations(internId);
+    }
+    if (!intern.chats || intern.chats.length === 0) {
+      intern.chats = await DeanApiService.getInternChats(internId);
+    }
+    if (!intern.attendanceLogs || intern.attendanceLogs.length === 0) {
+      intern.attendanceLogs = await DeanApiService.getInternActivityLogs(internId);
+    }
+
     this.currentIntern = intern;
 
     if (updateHash) {
@@ -565,6 +667,23 @@ const App = {
 
     const opsEl = document.getElementById('dossierOps');
     if (opsEl) opsEl.textContent = `${intern.operationsCount}`;
+
+    const hoursEl = document.getElementById('dossierHours');
+    if (hoursEl) hoursEl.textContent = `${intern.loggedHours ?? 0} / ${intern.targetHours ?? 300}`;
+
+    // Documents (view-only academic credentials, Part 9.2 spec)
+    const docsEl = document.getElementById('dossierDocumentsList');
+    if (docsEl) {
+      const docs = intern.documents || [];
+      const docLabels = { NationalIdFront: 'صورة البطاقة الشخصية', InternshipCard: 'كارنيه التدريب' };
+      docsEl.innerHTML = docs.length === 0
+        ? `<span style="font-size:0.8rem; color:var(--text-muted);">لا توجد مستندات مرفوعة.</span>`
+        : docs.map(d => `
+          <a href="${d.url}" target="_blank" rel="noopener" class="document-chip">
+            <i class="bx bxs-file-image"></i> ${docLabels[d.type] || d.type}
+          </a>
+        `).join('');
+    }
 
     const statusEl = document.getElementById('dossierStatus');
     if (statusEl) {
@@ -588,6 +707,12 @@ const App = {
 
     // 4. Populate Tab 4: Orders
     this.renderOrdersTab(intern);
+
+    // 5. Populate Tab 5: Attendance / Training Hours Log
+    this.renderAttendanceTab(intern);
+
+    // 6. Populate Tab 6: Supervisor Evaluations
+    this.renderEvaluationsTab(intern);
 
     // Default to chats tab
     this.switchDossierTab('chats');
@@ -679,6 +804,24 @@ const App = {
     }
   },
 
+  // --- Draft status badge helper (InternClinicalDrafts.Status, Part 10.7 spec) ---
+  renderDraftStatusBadge(status) {
+    const map = {
+      PendingSupervisorReview: { cls: 'pending', label: 'بانتظار اعتماد المشرف', icon: 'bx-time-five' },
+      Approved: { cls: 'active', label: 'معتمد من المشرف', icon: 'bx-badge-check' },
+      ChangesRequested: { cls: 'risk', label: 'مطلوب تعديل', icon: 'bx-error' },
+      Rejected: { cls: 'risk', label: 'مرفوض', icon: 'bx-x-circle' },
+    };
+    const s = map[status] || map.PendingSupervisorReview;
+    return `<span class="status-badge ${s.cls}"><i class="bx ${s.icon}"></i> ${s.label}</span>`;
+  },
+
+  // --- Render clinical drafts related to a specific entity kind (used by Rx & Plans tabs) ---
+  findDraftFor(intern, entityKind, targetEntityId) {
+    if (!intern.clinicalOperations) return null;
+    return intern.clinicalOperations.find(d => d.entityKind === entityKind && d.targetEntityId === targetEntityId) || null;
+  },
+
   // --- Render Tab 2: Prescriptions ---
   renderRxTab(intern) {
     const container = document.getElementById('dossierRxList');
@@ -698,7 +841,9 @@ const App = {
       }
     ];
 
-    container.innerHTML = rxs.map(rx => `
+    container.innerHTML = rxs.map(rx => {
+      const draft = this.findDraftFor(intern, 'PrescriptionReview', rx.id);
+      return `
       <div class="audit-card-item">
         <div class="audit-item-top">
           <span class="audit-item-badge"><i class="bx bx-file-blank"></i> ${rx.code}</span>
@@ -710,14 +855,16 @@ const App = {
           ${rx.medications.map(m => `<span class="med-tag"><i class="bx bx-capsule"></i> ${m}</span>`).join('')}
         </div>
         <div style="background:var(--bg-card); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-top:6px;">
-          <span style="font-size:0.78rem; font-weight:700; color:var(--primary);">💡 توصية المتدرب:</span>
-          <p style="font-size:0.82rem; color:var(--text-main); margin-top:2px;">${rx.studentNote}</p>
+          <span style="font-size:0.78rem; font-weight:700; color:var(--primary);">💡 توصية المتدرب (Draft):</span>
+          <p style="font-size:0.82rem; color:var(--text-main); margin-top:2px;">${draft ? draft.internClinicalNotes : rx.studentNote}</p>
         </div>
-        <div style="font-size:0.75rem; color:var(--success); font-weight:700; display:flex; align-items:center; gap:4px; margin-top:4px;">
-          <i class="bx bx-badge-check"></i> ${rx.supervisorSign}
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; flex-wrap:wrap; gap:6px;">
+          ${draft ? this.renderDraftStatusBadge(draft.supervisorStatus) : `<span style="font-size:0.75rem; color:var(--success); font-weight:700; display:flex; align-items:center; gap:4px;"><i class="bx bx-badge-check"></i> ${rx.supervisorSign}</span>`}
+          ${draft && draft.supervisorFeedback ? `<span style="font-size:0.78rem; color:var(--text-muted);"><i class="bx bx-comment-detail"></i> ${draft.supervisorFeedback}</span>` : ''}
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   },
 
   // --- Render Tab 3: Medication Plans ---
@@ -737,7 +884,9 @@ const App = {
       }
     ];
 
-    container.innerHTML = plans.map(pl => `
+    container.innerHTML = plans.map(pl => {
+      const draft = this.findDraftFor(intern, 'MedicationPlan', pl.id);
+      return `
       <div class="audit-card-item">
         <div class="audit-item-top">
           <span class="audit-item-badge" style="background:var(--success-light); color:var(--success-text);"><i class="bx bx-calendar-event"></i> خطة علاجية</span>
@@ -749,8 +898,13 @@ const App = {
           <strong>جدول المواعيد:</strong> ${pl.schedule}
         </div>
         <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;"><strong>تعليمات وإرشادات:</strong> ${pl.instructions}</p>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; flex-wrap:wrap; gap:6px;">
+          ${draft ? this.renderDraftStatusBadge(draft.supervisorStatus) : ''}
+          ${draft && draft.supervisorFeedback ? `<span style="font-size:0.78rem; color:var(--text-muted);"><i class="bx bx-comment-detail"></i> ${draft.supervisorFeedback}</span>` : ''}
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   },
 
   // --- Render Tab 4: Orders ---
@@ -774,6 +928,74 @@ const App = {
     `).join('');
   },
 
+  // --- Render Tab 5: Attendance / Training Hours Log (TrainingActivityLogs, Part 10.8 spec) ---
+  renderAttendanceTab(intern) {
+    const container = document.getElementById('dossierAttendanceList');
+    if (!container) return;
+
+    const logs = intern.attendanceLogs || [];
+    if (logs.length === 0) {
+      container.innerHTML = `<p style="text-align:center; padding:24px; color:var(--text-muted);">لا توجد مناوبات مسجلة بعد.</p>`;
+      return;
+    }
+
+    container.innerHTML = logs.map(log => {
+      const verified = log.supervisorVerified !== undefined ? log.supervisorVerified : true;
+      const verifierLabel = log.verifiedBy || intern.supervisorName || '';
+      return `
+      <div class="audit-card-item">
+        <div class="audit-item-top">
+          <span class="audit-item-badge"><i class="bx bx-time-five"></i> ${log.hours} ساعة</span>
+          <span class="audit-item-date">${log.date}</span>
+        </div>
+        <p class="audit-item-desc">${log.activityDescription || log.shift || ''}</p>
+        <div style="font-size:0.78rem; font-weight:700; display:flex; align-items:center; gap:4px; margin-top:4px; color:${verified ? 'var(--success)' : 'var(--warning)'};">
+          <i class="bx ${verified ? 'bx-check-double' : 'bx-time'}"></i>
+          ${verified ? `موثق بواسطة ${verifierLabel}` : 'بانتظار توثيق المشرف'}
+        </div>
+      </div>
+    `;
+    }).join('');
+  },
+
+  // --- Render Tab 6: Supervisor Competency Evaluations (TrainingEvaluations, new section per backend spec) ---
+  renderEvaluationsTab(intern) {
+    const container = document.getElementById('dossierEvaluationsList');
+    if (!container) return;
+
+    const evaluations = intern.evaluations || [];
+    if (evaluations.length === 0) {
+      container.innerHTML = `<p style="text-align:center; padding:24px; color:var(--text-muted);">لم يتم تسجيل تقييمات من المشرف بعد.</p>`;
+      return;
+    }
+
+    const scoreRow = (label, score) => `
+      <div class="eval-score-row">
+        <span class="eval-score-label">${label}</span>
+        <div class="eval-score-track">
+          <div class="eval-score-fill" style="width:${(score / 5) * 100}%;"></div>
+        </div>
+        <span class="eval-score-val">${score} / 5</span>
+      </div>
+    `;
+
+    container.innerHTML = evaluations.map(ev => `
+      <div class="audit-card-item">
+        <div class="audit-item-top">
+          <span class="audit-item-badge" style="background:var(--success-light); color:var(--success-text);"><i class="bx bx-star"></i> تقييم شهري</span>
+          <span class="audit-item-date">${ev.evaluatedAt ? new Date(ev.evaluatedAt).toLocaleDateString('ar-EG') : ''}</span>
+        </div>
+        ${scoreRow('المعرفة السريرية', ev.clinicalKnowledgeScore)}
+        ${scoreRow('مهارات التواصل', ev.communicationScore)}
+        ${scoreRow('الالتزام والأخلاقيات المهنية', ev.ethicsAndDisciplineScore)}
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-color-subtle);">
+          <span style="font-weight:800; color:var(--primary);">التقييم العام: ${ev.overallScore} / 5</span>
+        </div>
+        ${ev.supervisorComments ? `<p style="font-size:0.82rem; color:var(--text-main); margin-top:6px;"><strong>ملاحظات المشرف:</strong> ${ev.supervisorComments}</p>` : ''}
+      </div>
+    `).join('');
+  },
+
   // --- Switch Dossier Tabs ---
   switchDossierTab(tabKey) {
     // Buttons
@@ -786,7 +1008,9 @@ const App = {
       chats: 'dossierTabChats',
       rx: 'dossierTabRx',
       plans: 'dossierTabPlans',
-      orders: 'dossierTabOrders'
+      orders: 'dossierTabOrders',
+      attendance: 'dossierTabAttendance',
+      evaluations: 'dossierTabEvaluations'
     };
 
     const targetId = map[tabKey] || 'dossierTabChats';

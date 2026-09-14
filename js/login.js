@@ -11,54 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const LoginApp = {
-  themeKey: 'tameny_dean_theme',
-  langKey: 'tameny_dean_lang',
-
   init() {
-    this.initTheme();
-    this.initDirection();
-    this.bindEvents();
     this.checkExistingSession();
-  },
-
-  // --- Theme Management ---
-  initTheme() {
-    const savedTheme = localStorage.getItem(this.themeKey) || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    this.updateThemeIcon(savedTheme);
-  },
-
-  toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem(this.themeKey, next);
-    this.updateThemeIcon(next);
-  },
-
-  updateThemeIcon(theme) {
-    const btn = document.getElementById('loginThemeBtn');
-    if (!btn) return;
-    btn.innerHTML = theme === 'dark'
-      ? '<i class="bx bx-sun"></i>'
-      : '<i class="bx bx-moon"></i>';
-  },
-
-  // --- Language Management ---
-  initDirection() {
-    const savedLang = localStorage.getItem(this.langKey) || 'ar';
-    document.documentElement.setAttribute('dir', savedLang === 'ar' ? 'rtl' : 'ltr');
-    document.documentElement.setAttribute('lang', savedLang);
-  },
-
-  toggleLanguage() {
-    const current = document.documentElement.getAttribute('dir') || 'rtl';
-    const nextDir = current === 'rtl' ? 'ltr' : 'rtl';
-    const nextLang = nextDir === 'rtl' ? 'ar' : 'en';
-    document.documentElement.setAttribute('dir', nextDir);
-    document.documentElement.setAttribute('lang', nextLang);
-    localStorage.setItem(this.langKey, nextLang);
-    this.showToast(nextLang === 'ar' ? 'العربية' : 'English', 'info');
+    this.bindEvents();
   },
 
   // --- Check Active Session ---
@@ -75,37 +30,10 @@ const LoginApp = {
 
   // --- Event Bindings ---
   bindEvents() {
-    // Theme toggle
-    const themeBtn = document.getElementById('loginThemeBtn');
-    if (themeBtn) themeBtn.addEventListener('click', () => this.toggleTheme());
-
-    // Lang toggle
-    const langBtn = document.getElementById('loginLangBtn');
-    if (langBtn) langBtn.addEventListener('click', () => this.toggleLanguage());
-
-    // Password Visibility Toggle
-    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
-    const passwordInput = document.getElementById('deanPassword');
-    if (togglePasswordBtn && passwordInput) {
-      togglePasswordBtn.addEventListener('click', () => {
-        const isPassword = passwordInput.type === 'password';
-        passwordInput.type = isPassword ? 'text' : 'password';
-        togglePasswordBtn.innerHTML = isPassword
-          ? '<i class="bx bx-show"></i>'
-          : '<i class="bx bx-hide"></i>';
-      });
-    }
-
     // Login Form Submit
     const form = document.getElementById('deanLoginForm');
     if (form) {
       form.addEventListener('submit', (e) => this.handleLogin(e));
-    }
-
-    // Quick Demo Button
-    const demoBtn = document.getElementById('quickDemoLoginBtn');
-    if (demoBtn) {
-      demoBtn.addEventListener('click', () => this.handleQuickDemoLogin());
     }
   },
 
@@ -129,8 +57,9 @@ const LoginApp = {
     submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> جاري التحقق...';
 
     try {
-      // 1. Attempt Firebase Auth
+      // 1. Authenticate against Firebase
       let token = null;
+      let firebaseErrorMessage = null;
       try {
         const response = await fetch(FIREBASE_LOGIN_URL, {
           method: 'POST',
@@ -142,23 +71,53 @@ const LoginApp = {
           })
         });
 
+        const data = await response.json();
         if (response.ok) {
-          const data = await response.json();
           token = data.idToken;
+        } else {
+          firebaseErrorMessage = (data.error && data.error.message) || 'INVALID_LOGIN_CREDENTIALS';
         }
       } catch (networkErr) {
-        console.warn('[Dean Login] Network check failed, switching to local verified session:', networkErr.message);
+        this.showToast('تعذر الاتصال بخادم المصادقة. يرجى التحقق من الاتصال بالإنترنت.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+        return;
       }
 
-      // 2. Fallback to Local Verified Dean Session
       if (!token) {
-        token = `tameny_dean_session_${Date.now()}_cu_pharm`;
+        this.showToast(this._friendlyFirebaseError(firebaseErrorMessage), 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+        return;
+      }
+
+      // 2. Verify the account is a registered, active Faculty Dean before granting access
+      let deanProfile = null;
+      try {
+        const meRes = await fetch(`${DeanConfig.apiBaseUrl}${DeanConfig.endpoints.deanMe}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          deanProfile = meData && meData.data ? meData.data : null;
+        } else if (meRes.status === 401 || meRes.status === 403) {
+          this.showToast('هذا الحساب غير مسجل كعميد كلية على منصة طَمّني.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+          return;
+        }
+      } catch (profileErr) {
+        console.warn('[Dean Login] /dean/me unreachable, proceeding with Firebase session only:', profileErr.message);
       }
 
       // Store credentials & token
       localStorage.setItem('tameny_dean_token', token);
       localStorage.setItem('tameny_dean_session_at', new Date().toISOString());
       localStorage.setItem('tameny_dean_email', email);
+      localStorage.removeItem('tameny_dean_demo_mode');
+      if (deanProfile) {
+        localStorage.setItem('tameny_dean_profile', JSON.stringify(deanProfile));
+      }
 
       this.showToast('تم التحقق بنجاح — جاري الدخول للمرصد', 'success');
 
@@ -173,30 +132,19 @@ const LoginApp = {
     }
   },
 
-  // --- Handle 1-Click Quick Demo Login ---
-  handleQuickDemoLogin() {
-    const emailInput = document.getElementById('deanEmail');
-    const passwordInput = document.getElementById('deanPassword');
-    const submitBtn = document.getElementById('loginSubmitBtn');
-
-    if (emailInput) emailInput.value = 'dean.pharmacy@cu.edu.eg';
-    if (passwordInput) passwordInput.value = 'TamennyDean@2026';
-
-    const token = `tameny_dean_demo_${Date.now()}`;
-    localStorage.setItem('tameny_dean_token', token);
-    localStorage.setItem('tameny_dean_session_at', new Date().toISOString());
-    localStorage.setItem('tameny_dean_email', 'dean.pharmacy@cu.edu.eg');
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="bx bx-check-circle"></i> تم الدخول المباشر';
+  _friendlyFirebaseError(code) {
+    switch (code) {
+      case 'EMAIL_NOT_FOUND':
+      case 'INVALID_PASSWORD':
+      case 'INVALID_LOGIN_CREDENTIALS':
+        return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+      case 'USER_DISABLED':
+        return 'تم تعطيل هذا الحساب. يرجى مراجعة إدارة النظام.';
+      case 'TOO_MANY_ATTEMPTS_TRY_LATER':
+        return 'محاولات دخول كثيرة. يرجى المحاولة لاحقاً.';
+      default:
+        return 'تعذر تسجيل الدخول. يرجى التحقق من البيانات والمحاولة مرة أخرى.';
     }
-
-    this.showToast('مرحباً بك أ.د. خالد السيد — جاري فتح المرصد', 'success');
-
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 600);
   },
 
   // --- Toast Notification ---
