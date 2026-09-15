@@ -76,11 +76,34 @@ const DeanApiService = {
   },
 
   async getInterns(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
+    // Translate the UI's local filter keys onto the backend's real query param
+    // names/enum values (GET /dean/interns spec: trainingStatus, pharmacyId,
+    // search, page, pageSize) — using the wrong names silently no-ops filtering
+    // against the real backend instead of erroring, so this must stay in sync
+    // with Part 9.2 of the backend spec.
+    const backendParams = {};
+    if (params.search) backendParams.search = params.search;
+    if (params.status && params.status !== 'all') {
+      const trainingStatus = this._mapUiStatusToTrainingStatus(params.status);
+      if (trainingStatus) backendParams.trainingStatus = trainingStatus;
+    }
+    if (params.pharmacy && params.pharmacy !== 'all') backendParams.pharmacyId = params.pharmacy;
+    // Pending real pagination UI, request a larger page so a single faculty's
+    // full roster (typically well under a few hundred students) renders in one
+    // page instead of being silently truncated to the backend's default of 20.
+    backendParams.pageSize = params.pageSize || 200;
+    backendParams.page = params.page || 1;
+
+    const queryString = new URLSearchParams(backendParams).toString();
     const endpoint = `${DeanConfig.endpoints.interns}${queryString ? '?' + queryString : ''}`;
     const res = await this.request(endpoint);
 
     if (res && res.data && res.data.items) {
+      this.lastInternsPageMeta = {
+        totalCount: res.data.totalCount,
+        totalPages: res.data.totalPages,
+        page: res.data.page
+      };
       return res.data.items.map(this._normalizeInternSummary);
     }
 
@@ -104,9 +127,19 @@ const DeanApiService = {
     return list;
   },
 
-  async getInternDetail(id) {
+  _mapUiStatusToTrainingStatus(uiStatus) {
+    switch (uiStatus) {
+      case 'active': return 'InTraining';
+      case 'completed': return 'Completed';
+      case 'pending': return 'Enrolled';
+      case 'risk': return 'Inactive';
+      default: return null;
+    }
+  },
+
+  async getInternDetail(id, knownStatus = null) {
     const res = await this.request(DeanConfig.endpoints.internDetail(id));
-    if (res && res.data) return this._normalizeInternDossier(res.data, id);
+    if (res && res.data) return this._normalizeInternDossier(res.data, id, knownStatus);
     return DeanData.interns.find(i => i.id === id) || null;
   },
 
@@ -176,7 +209,7 @@ const DeanApiService = {
     }
   },
 
-  _normalizeInternDossier(data, fallbackId) {
+  _normalizeInternDossier(data, fallbackId, knownStatus) {
     const profile = data.profile || {};
     const placement = data.placement || {};
     const progress = data.progress || {};
@@ -199,8 +232,11 @@ const DeanApiService = {
       supervisorLicenseNumber: placement.supervisor ? placement.supervisor.licenseNumber : '',
       loggedHours: progress.loggedHours ?? 0,
       verifiedHours: progress.verifiedHours ?? 0,
-      targetHours: 300,
-      status: 'active',
+      targetHours: progress.targetHours ?? 300,
+      // GET /dean/interns/{id} does not return a training-status field (see
+      // backend request doc) — fall back to whatever status was known from the
+      // roster row that was clicked, since that IS returned by GET /dean/interns.
+      status: knownStatus || 'active',
       rating: progress.averageSupervisorRating ?? null,
       operationsCount: (progress.prescriptionReviewsCount ?? 0) + (progress.medicationPlansDrafted ?? 0),
       documents: data.documents || [],

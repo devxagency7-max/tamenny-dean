@@ -38,8 +38,8 @@
           <i class="bx bxs-graduation"></i>
         </div>
         <div class="faculty-badge-text">
-          <span class="faculty-name">كلية الصيدلة</span>
-          <span class="faculty-uni">جامعة القاهرة</span>
+          <span class="faculty-name" id="sidebarFacultyName">كلية الصيدلة</span>
+          <span class="faculty-uni" id="sidebarFacultyUni">جامعة القاهرة</span>
         </div>
       </div>
 
@@ -55,7 +55,7 @@
         <a class="nav-item" data-view="interns">
           <i class="bx bxs-user-detail"></i>
           <span>سجل المتدربين</span>
-          <span class="nav-item-badge" id="sidebarInternsCount">148</span>
+          <span class="nav-item-badge" id="sidebarInternsCount">—</span>
         </a>
 
         <span class="nav-section-title">النظام</span>
@@ -160,16 +160,16 @@
             <!-- Quick Filter Chips -->
             <div class="filter-pills" style="margin-top: 4px;">
               <button class="filter-pill active" data-filter="all">
-                <i class="bx bx-grid-alt"></i> الكل (148)
+                <i class="bx bx-grid-alt"></i> الكل (<span id="filterCountAll">—</span>)
               </button>
               <button class="filter-pill" data-filter="active">
-                <i class="bx bx-pulse"></i> نشط (126)
+                <i class="bx bx-pulse"></i> نشط (<span id="filterCountActive">—</span>)
               </button>
               <button class="filter-pill" data-filter="completed">
-                <i class="bx bx-check-circle"></i> مكتمل (18)
+                <i class="bx bx-check-circle"></i> مكتمل (<span id="filterCountCompleted">—</span>)
               </button>
               <button class="filter-pill" data-filter="risk">
-                <i class="bx bx-error-circle"></i> متابعة (4)
+                <i class="bx bx-error-circle"></i> متابعة (<span id="filterCountRisk">—</span>)
               </button>
             </div>
           </div>
@@ -529,7 +529,7 @@
                   <div class="card-header-icon"><i class="bx bxs-institution"></i></div>
                   <div>
                     <h3 class="card-title">بيانات الكلية</h3>
-                    <p class="card-subtitle">جامعة القاهرة — كلية الصيدلة</p>
+                    <p class="card-subtitle" id="settingsFacultySubtitle">جامعة القاهرة — كلية الصيدلة</p>
                   </div>
                 </div>
               </div>
@@ -537,15 +537,15 @@
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
                 <div class="audit-card-item">
                   <span class="stat-label">الجامعة</span>
-                  <span style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">جامعة القاهرة</span>
+                  <span id="settingsUniversityName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">جامعة القاهرة</span>
                 </div>
                 <div class="audit-card-item">
                   <span class="stat-label">الكلية</span>
-                  <span style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">كلية الصيدلة</span>
+                  <span id="settingsFacultyName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">كلية الصيدلة</span>
                 </div>
                 <div class="audit-card-item">
                   <span class="stat-label">العميد المسؤول</span>
-                  <span style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">أ.د. خالد السيد
+                  <span id="settingsDeanName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">أ.د. خالد السيد
                     إبراهيم</span>
                 </div>
                 <div class="audit-card-item">
@@ -644,7 +644,7 @@
 
               <div class="profile-detail-item">
                 <span class="detail-label"><i class="bx bx-buildings"></i> المؤسسة</span>
-                <span class="detail-value">جامعة القاهرة — كلية الصيدلة</span>
+                <span class="detail-value" id="profileDeanInstitution">جامعة القاهرة — كلية الصيدلة</span>
               </div>
 
               <div class="profile-detail-item">

@@ -16,6 +16,11 @@ const App = {
   activeFilter: 'all',
   activePharmacyFilter: 'all',
   searchQuery: '',
+  internStatusCache: {},
+
+  _cacheInternStatuses(interns) {
+    (interns || []).forEach(i => { this.internStatusCache[i.id] = i.status; });
+  },
 
   async init() {
     if (!this.requireAuth()) return;
@@ -289,6 +294,22 @@ const App = {
     this.renderDeanProfile();
     this.renderDashboard();
     this.renderInternsTable();
+    this.refreshDeanProfileFromBackend();
+  },
+
+  // getStoredDeanData() only reflects whatever /dean/me returned at login time.
+  // Re-fetch in the background so a stale/missing cached profile (e.g. an
+  // older session, or a login that couldn't reach /dean/me) self-heals once
+  // the real backend is reachable, without blocking the initial render.
+  async refreshDeanProfileFromBackend() {
+    const fresh = await DeanApiService.getDeanProfile();
+    if (!fresh || fresh === DeanConfig.currentDean) return;
+    const normalized = this._normalizeDeanProfile(fresh);
+    const current = JSON.stringify(this.getStoredDeanData());
+    const merged = { ...this.getStoredDeanData(), ...normalized };
+    if (JSON.stringify(merged) === current) return;
+    localStorage.setItem('tameny_dean_profile', JSON.stringify(merged));
+    this.renderDeanProfile();
   },
 
   // --- Dean Profile Management ---
@@ -322,15 +343,24 @@ const App = {
 
   renderDeanProfile() {
     const dean = this.getStoredDeanData();
-    const avatar = dean.name ? dean.name.replace('أ.د. ', '').trim().charAt(0) : 'خ';
+    const name = dean.name || DeanConfig.currentDean.name;
+    const university = dean.university || 'غير محدد';
+    const faculty = dean.faculty || 'غير محدد';
+    const avatar = name.replace('أ.د. ', '').trim().charAt(0) || 'خ';
 
     // Topbar Profile
     const topAvatar = document.getElementById('topbarDeanAvatar');
     const topName = document.getElementById('topbarDeanName');
     const topRole = document.getElementById('topbarDeanRole');
     if (topAvatar) topAvatar.textContent = avatar;
-    if (topName) topName.textContent = dean.name.split(' ').slice(0, 3).join(' ');
-    if (topRole) topRole.textContent = dean.title;
+    if (topName) topName.textContent = name.split(' ').slice(0, 3).join(' ');
+    if (topRole) topRole.textContent = dean.title || '';
+
+    // Sidebar Faculty/University Badge
+    const sideFacultyName = document.getElementById('sidebarFacultyName');
+    const sideFacultyUni = document.getElementById('sidebarFacultyUni');
+    if (sideFacultyName) sideFacultyName.textContent = faculty;
+    if (sideFacultyUni) sideFacultyUni.textContent = university;
 
     // View Profile Elements
     const pAvatar = document.getElementById('profileDeanAvatar');
@@ -340,14 +370,26 @@ const App = {
     const pEmail = document.getElementById('profileDeanEmail');
     const pPhone = document.getElementById('profileDeanPhone');
     const pOffice = document.getElementById('profileDeanOffice');
+    const pInstitution = document.getElementById('profileDeanInstitution');
 
     if (pAvatar) pAvatar.textContent = avatar;
-    if (pName) pName.textContent = dean.name;
-    if (pTitle) pTitle.textContent = `${dean.title} — ${dean.university}`;
-    if (pDegree) pDegree.textContent = dean.degree;
-    if (pEmail) pEmail.textContent = dean.email;
-    if (pPhone) pPhone.textContent = dean.phone;
-    if (pOffice) pOffice.textContent = dean.office;
+    if (pName) pName.textContent = name;
+    if (pTitle) pTitle.textContent = dean.title ? `${dean.title} — ${university}` : university;
+    if (pDegree) pDegree.textContent = dean.degree || '';
+    if (pEmail) pEmail.textContent = dean.email || '';
+    if (pPhone) pPhone.textContent = dean.phone || '';
+    if (pOffice) pOffice.textContent = dean.office || '';
+    if (pInstitution) pInstitution.textContent = `${university} — ${faculty}`;
+
+    // Settings / Faculty Profile View
+    const setUniversity = document.getElementById('settingsUniversityName');
+    const setFaculty = document.getElementById('settingsFacultyName');
+    const setDean = document.getElementById('settingsDeanName');
+    const setSubtitle = document.getElementById('settingsFacultySubtitle');
+    if (setUniversity) setUniversity.textContent = university;
+    if (setFaculty) setFaculty.textContent = faculty;
+    if (setDean) setDean.textContent = name;
+    if (setSubtitle) setSubtitle.textContent = `${university} — ${faculty}`;
   },
 
   openEditProfileModal() {
@@ -422,6 +464,24 @@ const App = {
         : `${(k.complianceRate ?? 0)}%`;
       complianceEl.textContent = rate;
     }
+
+    // Sidebar roster badge + dashboard filter-pill counts
+    const totalInterns = k.totalEnrolledStudents ?? k.totalInterns ?? 0;
+    const activeInterns = k.activelyInTraining ?? k.activeInPharmacies ?? 0;
+    const completedInterns = k.completedInternships ?? k.completedTraining ?? 0;
+    const riskInterns = k.inactiveStudents ?? k.atRiskFollowUp ?? 0;
+
+    const sidebarCountEl = document.getElementById('sidebarInternsCount');
+    if (sidebarCountEl) sidebarCountEl.textContent = totalInterns.toLocaleString('ar-EG');
+
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val.toLocaleString('ar-EG');
+    };
+    setText('filterCountAll', totalInterns);
+    setText('filterCountActive', activeInterns);
+    setText('filterCountCompleted', completedInterns);
+    setText('filterCountRisk', riskInterns);
 
     this.renderDashboardInterns();
     this.renderInternshipProgress();
@@ -500,6 +560,7 @@ const App = {
       search: this.searchQuery,
       status: this.activeFilter
     });
+    this._cacheInternStatuses(interns);
 
     const countEl = document.getElementById('dashInternsCount');
     if (countEl) countEl.textContent = `(${interns.length})`;
@@ -567,6 +628,7 @@ const App = {
       status: this.activeFilter,
       pharmacy: this.activePharmacyFilter
     });
+    this._cacheInternStatuses(interns);
 
     const countEl = document.getElementById('internsFilteredCount');
     if (countEl) countEl.textContent = `(${interns.length})`;
@@ -626,7 +688,7 @@ const App = {
 
   // --- Full-Page Intern Dossier (NOT A MODAL) ---
   async openInternProfile(internId, updateHash = true) {
-    const intern = await DeanApiService.getInternDetail(internId);
+    const intern = await DeanApiService.getInternDetail(internId, this.internStatusCache[internId]);
     if (!intern) {
       this.showToast('لم يتم العثور على ملف المتدرب', 'warning');
       return;
