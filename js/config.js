@@ -5,7 +5,9 @@
 const DeanConfig = {
   appName: 'طَمّني',
   brandName: 'Tamenny',
-  apiBaseUrl: 'http://204.168.149.185/api/v1',
+  // Relative path — proxied to the plain-HTTP backend via vercel.json rewrites.
+  // A direct http:// URL would be blocked as mixed content on the https:// deployed site.
+  apiBaseUrl: '/api/v1',
   observabilityMode: true, // Read-Only Observability (No Approvals)
 
   currentDean: {
