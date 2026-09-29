@@ -384,10 +384,13 @@ const App = {
     const pOffice = document.getElementById('profileDeanOffice');
     const pInstitution = document.getElementById('profileDeanInstitution');
 
+    const title = lang === 'en' ? 'Dean of Faculty of Pharmacy' : (dean.title || 'عميد كلية الصيدلة');
+    const degree = lang === 'en' ? 'Professor of Biochemistry & Pharmaceutical Control' : (dean.degree || 'أستاذ الكيمياء الحيوية والرقابة الدوائية');
+
     if (pAvatar) pAvatar.textContent = avatar;
     if (pName) pName.textContent = name;
-    if (pTitle) pTitle.textContent = dean.title ? `${dean.title} — ${university}` : university;
-    if (pDegree) pDegree.textContent = dean.degree || '';
+    if (pTitle) pTitle.textContent = `${title} — ${university}`;
+    if (pDegree) pDegree.textContent = degree;
     if (pEmail) pEmail.textContent = dean.email || '';
     if (pPhone) pPhone.textContent = dean.phone || '';
     if (pOffice) pOffice.textContent = dean.office || '';
