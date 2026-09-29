@@ -66,13 +66,13 @@ body {
   height: 100vh;
   position: sticky;
   top: 0;
-  background: var(--bg-card);
+  background: var(--gradient-primary);
   border-inline-end: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   z-index: 100;
   transition: width var(--transition-normal), min-width var(--transition-normal), background var(--transition-normal);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
 }
 
 [data-theme="dark"] .sidebar {
@@ -90,7 +90,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-color-subtle);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .brand-container {
@@ -98,7 +98,7 @@ body {
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: inherit;
+  color: #ffffff;
   overflow: hidden;
 }
 
@@ -107,8 +107,10 @@ body {
   height: 40px;
   border-radius: var(--radius-sm);
   object-fit: contain;
-  box-shadow: 0 4px 12px var(--primary-glow);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
+  background: #ffffff;
+  padding: 2px;
 }
 
 .brand-info {
@@ -120,7 +122,7 @@ body {
 .brand-title {
   font-size: 1.15rem;
   font-weight: 800;
-  color: var(--primary);
+  color: #ffffff;
   line-height: 1.2;
   letter-spacing: -0.3px;
 }
@@ -128,7 +130,7 @@ body {
 .brand-subtitle {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
 }
 
@@ -140,8 +142,10 @@ body {
 .faculty-badge-card {
   margin: 16px 18px;
   padding: 12px 14px;
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -154,14 +158,14 @@ body {
   width: 38px;
   height: 38px;
   border-radius: var(--radius-sm);
-  background: var(--gradient-primary);
+  background: rgba(255, 255, 255, 0.25);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px var(--primary-glow);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .faculty-badge-text {
@@ -173,7 +177,7 @@ body {
 .faculty-name {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text-heading);
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -181,7 +185,7 @@ body {
 
 .faculty-uni {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .sidebar.collapsed .faculty-badge-card {
@@ -207,7 +211,7 @@ body {
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-light);
+  color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.5px;
   padding: 12px 12px 6px;
 }
@@ -222,7 +226,7 @@ body {
   gap: 14px;
   padding: 11px 16px;
   border-radius: var(--radius-md);
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 600;
@@ -234,28 +238,28 @@ body {
 
 .nav-item i {
   font-size: 1.35rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.85);
   transition: var(--transition-fast);
   flex-shrink: 0;
 }
 
 .nav-item:hover {
-  background: var(--bg-card-hover);
-  color: var(--primary);
-  border-color: var(--border-color-subtle);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .nav-item:hover i {
-  color: var(--primary);
+  color: #ffffff;
   transform: scale(1.08);
 }
 
 .nav-item.active {
-  background: var(--bg-card-2);
+  background: #ffffff;
   color: var(--primary);
   font-weight: 700;
-  border-color: var(--border-color);
-  box-shadow: var(--shadow-xs);
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .nav-item.active i {
@@ -283,6 +287,11 @@ body {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.nav-item.active .nav-item-badge {
   background: var(--primary-glow);
   color: var(--primary);
 }
@@ -300,7 +309,7 @@ body {
 /* Sidebar Footer */
 .sidebar-footer {
   padding: 16px;
-  border-top: 1px solid var(--border-color-subtle);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -310,9 +319,9 @@ body {
   width: 38px;
   height: 38px;
   border-radius: var(--radius-sm);
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -322,9 +331,9 @@ body {
 }
 
 .sidebar-toggle-btn:hover {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: #ffffff;
+  color: var(--primary);
+  border-color: #ffffff;
 }
 
 .observability-badge {
@@ -333,9 +342,9 @@ body {
   gap: 6px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--info);
+  color: #ffffff;
   padding: 4px 10px;
-  background: var(--info-light);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-full);
 }
 
