@@ -67,19 +67,26 @@ const App = {
 
   // --- Language / Direction Management ---
   initDirection() {
-    const savedLang = localStorage.getItem(DeanConfig.langKey) || 'ar';
+    const savedLang = localStorage.getItem(DeanConfig.langKey) || 'en';
     document.documentElement.setAttribute('dir', savedLang === 'ar' ? 'rtl' : 'ltr');
     document.documentElement.setAttribute('lang', savedLang);
+    if (typeof applyDeanTranslations === 'function') {
+      applyDeanTranslations();
+    }
   },
 
   toggleLanguage() {
-    const current = document.documentElement.getAttribute('dir') || 'rtl';
-    const nextDir = current === 'rtl' ? 'ltr' : 'rtl';
-    const nextLang = nextDir === 'rtl' ? 'ar' : 'en';
+    const currentLang = document.documentElement.getAttribute('lang') || 'en';
+    const nextLang = currentLang === 'en' ? 'ar' : 'en';
+    const nextDir = nextLang === 'ar' ? 'rtl' : 'ltr';
     
     document.documentElement.setAttribute('dir', nextDir);
     document.documentElement.setAttribute('lang', nextLang);
     localStorage.setItem(DeanConfig.langKey, nextLang);
+    
+    if (typeof applyDeanTranslations === 'function') {
+      applyDeanTranslations();
+    }
     
     this.showToast(nextLang === 'ar' ? 'العربية' : 'English', 'info');
   },

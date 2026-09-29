@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="light">
+<html lang="en" dir="ltr" data-theme="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -27,7 +27,7 @@
         <a href="#dashboard" class="brand-container">
           <img src="assets/images/logo.png" alt="Tamenny Logo" class="brand-logo">
           <div class="brand-info">
-            <span class="brand-title">طَمّني</span>
+            <span class="brand-title" data-i18n="brand_name">Tamenny</span>
           </div>
         </a>
       </div>
@@ -38,47 +38,47 @@
           <i class="bx bxs-graduation"></i>
         </div>
         <div class="faculty-badge-text">
-          <span class="faculty-name" id="sidebarFacultyName">كلية الصيدلة</span>
-          <span class="faculty-uni" id="sidebarFacultyUni">جامعة القاهرة</span>
+          <span class="faculty-name" id="sidebarFacultyName" data-i18n="faculty_name">Faculty of Pharmacy</span>
+          <span class="faculty-uni" id="sidebarFacultyUni" data-i18n="faculty_uni">Cairo University</span>
         </div>
       </div>
 
       <!-- Sidebar Navigation Menu -->
       <nav class="sidebar-nav">
-        <span class="nav-section-title">المتابعة والتدقيق</span>
+        <span class="nav-section-title" data-i18n="nav_section_audit">OBSERVABILITY & AUDIT</span>
 
         <a class="nav-item active" data-view="dashboard">
           <i class="bx bxs-dashboard"></i>
-          <span>الرئيسية</span>
+          <span data-i18n="nav_dashboard">Dashboard</span>
         </a>
 
         <a class="nav-item" data-view="interns">
           <i class="bx bxs-user-detail"></i>
-          <span>سجل المتدربين</span>
+          <span data-i18n="nav_interns">Interns Directory</span>
           <span class="nav-item-badge" id="sidebarInternsCount">—</span>
         </a>
 
-        <span class="nav-section-title">النظام</span>
+        <span class="nav-section-title" data-i18n="nav_section_system">SYSTEM</span>
 
         <a class="nav-item" data-view="profile">
           <i class="bx bxs-user-badge"></i>
-          <span>الملف الشخصي</span>
+          <span data-i18n="nav_profile">Profile</span>
         </a>
 
         <a class="nav-item" data-view="settings">
           <i class="bx bxs-institution"></i>
-          <span>ملف الكلية</span>
+          <span data-i18n="nav_faculty">Faculty Profile</span>
         </a>
       </nav>
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
-        <div class="observability-badge" title="نظام مراقبة ورصد أكاديمي لحظي">
+        <div class="observability-badge" title="Academic Observability Portal">
           <i class="bx bx-show"></i>
-          <span>المرصد الأكاديمي</span>
+          <span data-i18n="observability_badge">Academic Observatory</span>
         </div>
-        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="تصغير / توسيع القائمة">
-          <i class="bx bx-chevron-right"></i>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+          <i class="bx bx-chevron-left"></i>
         </button>
       </div>
     </aside>
@@ -148,28 +148,28 @@
           <div class="hero-search-card">
             <h2 class="hero-search-title">
               <i class="bx bx-search-alt-2" style="color:var(--primary); font-size:1.35rem;"></i>
-              البحث الفوري
+              <span data-i18n="hero_search_title">Quick Search</span>
             </h2>
             <div class="hero-search-input-box">
               <i class="bx bx-search"></i>
-              <input type="text" id="dashboardHeroSearch" class="hero-search-input"
-                placeholder="ابحث بالاسم، رقم القيد، أو اسم الصيدلية...">
+              <input type="text" id="dashboardHeroSearch" class="hero-search-input" data-i18n="hero_search_placeholder" data-i18n-attr="placeholder"
+                placeholder="Search by name, ID, or pharmacy name...">
               <span class="hero-search-kbd">⌘K</span>
             </div>
 
             <!-- Quick Filter Chips -->
             <div class="filter-pills" style="margin-top: 4px;">
               <button class="filter-pill active" data-filter="all">
-                <i class="bx bx-grid-alt"></i> الكل (<span id="filterCountAll">—</span>)
+                <i class="bx bx-grid-alt"></i> <span data-i18n="filter_all">All</span> (<span id="filterCountAll">—</span>)
               </button>
               <button class="filter-pill" data-filter="active">
-                <i class="bx bx-pulse"></i> نشط (<span id="filterCountActive">—</span>)
+                <i class="bx bx-pulse"></i> <span data-i18n="filter_active">Active</span> (<span id="filterCountActive">—</span>)
               </button>
               <button class="filter-pill" data-filter="completed">
-                <i class="bx bx-check-circle"></i> مكتمل (<span id="filterCountCompleted">—</span>)
+                <i class="bx bx-check-circle"></i> <span data-i18n="filter_completed">Completed</span> (<span id="filterCountCompleted">—</span>)
               </button>
               <button class="filter-pill" data-filter="risk">
-                <i class="bx bx-error-circle"></i> متابعة (<span id="filterCountRisk">—</span>)
+                <i class="bx bx-error-circle"></i> <span data-i18n="filter_under_review">Under Review</span> (<span id="filterCountRisk">—</span>)
               </button>
             </div>
           </div>
@@ -180,7 +180,7 @@
             <div class="quick-kpi-tile">
               <div>
                 <div class="quick-kpi-num" id="statTotalInterns">148</div>
-                <div class="quick-kpi-lbl">المتدربون</div>
+                <div class="quick-kpi-lbl" data-i18n="metric_interns">Total Interns</div>
               </div>
               <div class="stat-icon-wrapper primary" style="width:48px; height:48px; font-size:1.4rem;">
                 <i class="bx bxs-user-badge"></i>
@@ -190,7 +190,7 @@
             <div class="quick-kpi-tile">
               <div>
                 <div class="quick-kpi-num" id="statTotalOperations">4,320</div>
-                <div class="quick-kpi-lbl">العمليات السريرية</div>
+                <div class="quick-kpi-lbl" data-i18n="metric_operations">Clinical Operations</div>
               </div>
               <div class="stat-icon-wrapper purple" style="width:48px; height:48px; font-size:1.4rem;">
                 <i class="bx bxs-capsule"></i>
@@ -200,7 +200,7 @@
             <div class="quick-kpi-tile">
               <div>
                 <div class="quick-kpi-num" id="statComplianceRate">97.4%</div>
-                <div class="quick-kpi-lbl">متوسط تقييم الكفاءة</div>
+                <div class="quick-kpi-lbl" data-i18n="metric_performance">Avg Performance Rating</div>
               </div>
               <div class="stat-icon-wrapper success" style="width:48px; height:48px; font-size:1.4rem;">
                 <i class="bx bxs-chat"></i>
@@ -215,8 +215,8 @@
               <div class="card-header-left">
                 <div class="card-header-icon"><i class="bx bx-bar-chart-alt-2"></i></div>
                 <div>
-                  <h3 class="card-title">توزيع نسب إنجاز ساعات التدريب</h3>
-                  <p class="card-subtitle">متوسط أيام الإنجاز: <strong id="internshipProgressAvgDays">—</strong></p>
+                  <h3 class="card-title" data-i18n="progress_chart_title">Training Hours Progress Distribution</h3>
+                  <p class="card-subtitle"><span data-i18n="progress_chart_sub">Average Completion Time: 92.3 Days</span></p>
                 </div>
               </div>
             </div>
@@ -715,6 +715,7 @@
 
   <!-- Application Scripts -->
   <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
