@@ -280,16 +280,26 @@ const App = {
     const titleEl = document.getElementById('pageTitle');
     const subEl = document.getElementById('pageSubtitle');
     if (!titleEl) return;
+    const lang = document.documentElement.getAttribute('lang') || 'en';
 
     const titles = {
-      dashboard: { title: 'الرئيسية', sub: '' },
-      interns: { title: 'سجل المتدربين', sub: '' },
-      'intern-detail': { title: 'الملف الطبي للمتدرب', sub: '' },
-      profile: { title: 'الملف الشخصي للعميد', sub: '' },
-      settings: { title: 'ملف الكلية', sub: '' },
+      en: {
+        dashboard: { title: 'Dashboard', sub: '' },
+        interns: { title: 'Interns Directory', sub: '' },
+        'intern-detail': { title: 'Student Clinical Dossier', sub: '' },
+        profile: { title: 'Dean Profile', sub: '' },
+        settings: { title: 'Faculty Settings', sub: '' },
+      },
+      ar: {
+        dashboard: { title: 'الرئيسية', sub: '' },
+        interns: { title: 'سجل المتدربين', sub: '' },
+        'intern-detail': { title: 'الملف الطبي للمتدرب', sub: '' },
+        profile: { title: 'الملف الشخصي للعميد', sub: '' },
+        settings: { title: 'ملف الكلية', sub: '' },
+      }
     };
 
-    const current = titles[viewId] || titles.dashboard;
+    const current = (titles[lang] && titles[lang][viewId]) || titles.en[viewId] || titles.en.dashboard;
     titleEl.textContent = current.title;
     if (subEl) {
       subEl.textContent = current.sub;
@@ -304,10 +314,6 @@ const App = {
     this.refreshDeanProfileFromBackend();
   },
 
-  // getStoredDeanData() only reflects whatever /dean/me returned at login time.
-  // Re-fetch in the background so a stale/missing cached profile (e.g. an
-  // older session, or a login that couldn't reach /dean/me) self-heals once
-  // the real backend is reachable, without blocking the initial render.
   async refreshDeanProfileFromBackend() {
     const fresh = await DeanApiService.getDeanProfile();
     if (!fresh || fresh === DeanConfig.currentDean) return;
@@ -333,8 +339,6 @@ const App = {
     return DeanConfig.currentDean;
   },
 
-  // Maps the real /dean/me response shape (nested university/faculty objects)
-  // onto the flat field names the rest of the UI expects.
   _normalizeDeanProfile(raw) {
     if (!raw) return {};
     const normalized = { ...raw };
@@ -350,18 +354,19 @@ const App = {
 
   renderDeanProfile() {
     const dean = this.getStoredDeanData();
-    const name = dean.name || DeanConfig.currentDean.name;
-    const university = dean.university || 'غير محدد';
-    const faculty = dean.faculty || 'غير محدد';
-    const avatar = name.replace('أ.د. ', '').trim().charAt(0) || 'خ';
+    const lang = document.documentElement.getAttribute('lang') || 'en';
+    const name = lang === 'en' ? 'Prof. Dr. Khaled El-Sayed' : (dean.name || DeanConfig.currentDean.name);
+    const university = lang === 'en' ? 'Cairo University' : (dean.university || 'جامعة القاهرة');
+    const faculty = lang === 'en' ? 'Faculty of Pharmacy' : (dean.faculty || 'كلية الصيدلة');
+    const avatar = 'K';
 
     // Topbar Profile
     const topAvatar = document.getElementById('topbarDeanAvatar');
     const topName = document.getElementById('topbarDeanName');
     const topRole = document.getElementById('topbarDeanRole');
     if (topAvatar) topAvatar.textContent = avatar;
-    if (topName) topName.textContent = name.split(' ').slice(0, 3).join(' ');
-    if (topRole) topRole.textContent = dean.title || '';
+    if (topName) topName.textContent = lang === 'en' ? 'Prof. Dr. Khaled El-Sayed' : name.split(' ').slice(0, 3).join(' ');
+    if (topRole) topRole.textContent = lang === 'en' ? 'Dean of Faculty' : (dean.title || 'عميد الكلية');
 
     // Sidebar Faculty/University Badge
     const sideFacultyName = document.getElementById('sidebarFacultyName');
@@ -455,13 +460,15 @@ const App = {
 
   // --- Render Dashboard ---
   async renderDashboard() {
+    const lang = document.documentElement.getAttribute('lang') || 'en';
+    const locale = lang === 'en' ? 'en-US' : 'ar-EG';
     const k = await DeanApiService.getDashboardSummary();
     this.animateCount('statTotalInterns', k.totalEnrolledStudents ?? k.totalInterns ?? 0);
 
     const opsEl = document.getElementById('statTotalOperations');
     if (opsEl) {
       const totalOps = (k.totalPrescriptionReviewsLogged ?? k.totalRxReviewed ?? 0) + (k.totalMedicationPlansDrafted ?? k.totalPlansCreated ?? 0);
-      opsEl.textContent = totalOps.toLocaleString('ar-EG');
+      opsEl.textContent = totalOps.toLocaleString(locale);
     }
 
     const complianceEl = document.getElementById('statComplianceRate');
@@ -479,11 +486,11 @@ const App = {
     const riskInterns = k.inactiveStudents ?? k.atRiskFollowUp ?? 0;
 
     const sidebarCountEl = document.getElementById('sidebarInternsCount');
-    if (sidebarCountEl) sidebarCountEl.textContent = totalInterns.toLocaleString('ar-EG');
+    if (sidebarCountEl) sidebarCountEl.textContent = totalInterns.toLocaleString(locale);
 
     const setText = (id, val) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = val.toLocaleString('ar-EG');
+      if (el) el.textContent = val.toLocaleString(locale);
     };
     setText('filterCountAll', totalInterns);
     setText('filterCountActive', activeInterns);
@@ -499,6 +506,8 @@ const App = {
       const feed = await DeanApiService.getActivityFeed(8);
       feedEl.innerHTML = feed.map(item => {
         const studentName = item.studentName || item.name || '';
+        const badgeText = item.type === 'rx' ? t('action_rx') : item.type === 'plan' ? t('action_plan') : t('action_dispense');
+        const verificationText = item.supervisorVerified === false ? t('unverified') : t('verified');
         return `
         <div class="live-stream-item">
           <div class="stream-avatar">${item.avatarInitial || studentName.slice(0, 2)}</div>
@@ -510,8 +519,8 @@ const App = {
             <span class="stream-action-desc">${item.action} — ${item.pharmacy}</span>
             <span class="stream-action-desc" style="font-size:0.75rem; opacity:0.85;">${item.detail || ''}</span>
             <div class="stream-badge-row">
-              <span class="stream-badge ${item.type}">${item.type === 'rx' ? 'فحص روشتة' : item.type === 'plan' ? 'خطة علاج' : 'صرف طلب'}</span>
-              <span style="font-size:0.68rem; color:var(--text-light);"><i class="bx bx-check-double"></i> ${item.supervisorVerified === false ? 'بانتظار الاعتماد' : 'موثق'}</span>
+              <span class="stream-badge ${item.type}">${badgeText}</span>
+              <span style="font-size:0.68rem; color:var(--text-light);"><i class="bx bx-check-double"></i> ${verificationText}</span>
             </div>
           </div>
         </div>
@@ -526,9 +535,16 @@ const App = {
     const avgEl = document.getElementById('internshipProgressAvgDays');
     if (!container) return;
 
+    const lang = document.documentElement.getAttribute('lang') || 'en';
     const progress = await DeanApiService.getInternshipProgress();
     const brackets = progress.hoursBrackets || {};
-    const bracketDefs = [
+    const bracketDefs = lang === 'en' ? [
+      { key: 'zeroToTwentyFivePercent', label: '0 - 25%' },
+      { key: 'twentySixToFiftyPercent', label: '26 - 50%' },
+      { key: 'fiftyOneToSeventyFivePercent', label: '51 - 75%' },
+      { key: 'seventySixToNinetyNinePercent', label: '76 - 99%' },
+      { key: 'completedOneHundredPercent', label: '100% Completed' },
+    ] : [
       { key: 'zeroToTwentyFivePercent', label: '٠-٢٥٪' },
       { key: 'twentySixToFiftyPercent', label: '٢٦-٥٠٪' },
       { key: 'fiftyOneToSeventyFivePercent', label: '٥١-٧٥٪' },
@@ -552,8 +568,9 @@ const App = {
     }).join('');
 
     if (avgEl) {
+      const daysUnit = lang === 'en' ? 'Days' : 'يوم';
       avgEl.textContent = progress.averageDaysToCompletion
-        ? `${progress.averageDaysToCompletion.toFixed(1)} يوم`
+        ? `${progress.averageDaysToCompletion.toFixed(1)} ${daysUnit}`
         : '—';
     }
   },
@@ -563,6 +580,7 @@ const App = {
     const tbody = document.getElementById('dashInternsTableBody');
     if (!tbody) return;
 
+    const lang = document.documentElement.getAttribute('lang') || 'en';
     const interns = await DeanApiService.getInterns({
       search: this.searchQuery,
       status: this.activeFilter
@@ -577,22 +595,21 @@ const App = {
         <tr>
           <td colspan="4" style="text-align:center; padding:32px; color:var(--text-muted);">
             <i class="bx bx-search-alt" style="font-size:2rem; color:var(--text-light); display:block; margin-bottom:6px;"></i>
-            لا توجد نتائج مطابقة لمعايير البحث.
+            ${t('no_results')}
           </td>
         </tr>
       `;
       return;
     }
 
-    // Show top 6 on dashboard
     const displayList = interns.slice(0, 6);
 
     tbody.innerHTML = displayList.map(i => {
       let statusClass = 'active';
-      let statusLabel = 'نشط';
-      if (i.status === 'completed') { statusClass = 'completed'; statusLabel = 'مكتمل'; }
-      if (i.status === 'pending')   { statusClass = 'pending'; statusLabel = 'بانتظار التحاق'; }
-      if (i.status === 'risk')      { statusClass = 'risk'; statusLabel = 'متابعة'; }
+      let statusLabel = t('status_active');
+      if (i.status === 'completed') { statusClass = 'completed'; statusLabel = t('status_completed'); }
+      if (i.status === 'pending')   { statusClass = 'pending'; statusLabel = t('status_pending'); }
+      if (i.status === 'risk')      { statusClass = 'risk'; statusLabel = t('status_risk'); }
 
       return `
         <tr>
@@ -606,7 +623,7 @@ const App = {
             </div>
           </td>
           <td>
-            <span style="font-weight:700; color:var(--primary); font-size:0.95rem;">${i.operationsCount} عملية</span>
+            <span style="font-weight:700; color:var(--primary); font-size:0.95rem;">${i.operationsCount} ${t('ops_suffix')}</span>
           </td>
           <td>
             <span class="status-badge ${statusClass}">
@@ -617,7 +634,7 @@ const App = {
           <td>
             <button class="table-action-btn" onclick="App.openInternProfile('${i.id}')">
               <i class="bx bx-show"></i>
-              الملف الطبي
+              ${t('btn_view_file')}
             </button>
           </td>
         </tr>
@@ -630,6 +647,7 @@ const App = {
     const tbody = document.getElementById('internsTableBody');
     if (!tbody) return;
 
+    const lang = document.documentElement.getAttribute('lang') || 'en';
     const interns = await DeanApiService.getInterns({
       search: this.searchQuery,
       status: this.activeFilter,
@@ -645,7 +663,7 @@ const App = {
         <tr>
           <td colspan="5" style="text-align:center; padding: 40px; color:var(--text-muted);">
             <i class="bx bx-search-alt" style="font-size: 2.4rem; color:var(--text-light); margin-bottom: 8px; display:block;"></i>
-            لا توجد نتائج مطابقة للبحث.
+            ${t('no_results')}
           </td>
         </tr>
       `;
@@ -654,10 +672,10 @@ const App = {
 
     tbody.innerHTML = interns.map(i => {
       let statusClass = 'active';
-      let statusLabel = 'نشط';
-      if (i.status === 'completed') { statusClass = 'completed'; statusLabel = 'مكتمل'; }
-      if (i.status === 'pending')   { statusClass = 'pending'; statusLabel = 'بانتظار التحاق'; }
-      if (i.status === 'risk')      { statusClass = 'risk'; statusLabel = 'متابعة'; }
+      let statusLabel = t('status_active');
+      if (i.status === 'completed') { statusClass = 'completed'; statusLabel = t('status_completed'); }
+      if (i.status === 'pending')   { statusClass = 'pending'; statusLabel = t('status_pending'); }
+      if (i.status === 'risk')      { statusClass = 'risk'; statusLabel = t('status_risk'); }
 
       return `
         <tr>

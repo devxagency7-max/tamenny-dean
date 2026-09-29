@@ -1,6 +1,6 @@
 /**
  * Tamenny Faculty Dean Portal - i18n Translation Dictionary
- * Provides complete English and Arabic localization for all UI elements.
+ * Comprehensive localization system for English (LTR) and Arabic (RTL).
  */
 
 const DeanTranslations = {
@@ -23,7 +23,7 @@ const DeanTranslations = {
     title_interns: 'Interns Directory',
     title_profile: 'Dean Profile',
     title_faculty: 'Faculty Settings',
-    title_intern_detail: 'Intern Profile',
+    title_intern_detail: 'Student Clinical Dossier',
     theme_toggle: 'Toggle Dark / Light Mode',
     lang_toggle: 'Switch Language (عربي / EN)',
 
@@ -42,14 +42,18 @@ const DeanTranslations = {
 
     // Progress Section
     progress_chart_title: 'Training Hours Progress Distribution',
-    progress_chart_sub: 'Average Completion Time: 92.3 Days',
+    progress_chart_sub_prefix: 'Average Completion Time:',
+    progress_days_unit: 'Days',
 
     // Tables & Feeds
     feed_title: 'Live Field Activity Stream',
     feed_sub: 'Real-time Operations Feed',
+    live_badge: 'LIVE',
     interns_table_title: 'Interns',
     interns_table_sub: 'Direct Access to Student Profiles',
+    btn_full_directory: 'Full Directory',
     table_col_intern: 'Intern',
+    table_col_governorate: 'Governorate',
     table_col_status: 'Status',
     table_col_operations: 'Operations',
     table_col_file: 'Medical File',
@@ -58,8 +62,19 @@ const DeanTranslations = {
     btn_details: 'Details',
     status_active: 'Active',
     status_completed: 'Completed',
+    status_pending: 'Pending',
+    status_risk: 'Under Review',
+    ops_suffix: 'ops',
+    no_results: 'No matching results found.',
 
-    // Dean Info Profile Card
+    // Activity Stream Items
+    action_rx: 'Prescription Audit',
+    action_plan: 'Treatment Plan',
+    action_dispense: 'Order Dispensed',
+    verified: 'Verified',
+    unverified: 'Pending Verification',
+
+    // Dean Profile & Settings
     dean_name: 'Prof. Dr. Khaled El-Sayed Ibrahim',
     dean_title: 'Dean of Faculty of Pharmacy',
     dean_degree: 'Professor of Biochemistry & Drug Quality Control',
@@ -110,14 +125,18 @@ const DeanTranslations = {
 
     // Progress Section
     progress_chart_title: 'توزيع نسب إنجاز ساعات التدريب',
-    progress_chart_sub: 'متوسط أيام الإنجاز: 92.3 يوم',
+    progress_chart_sub_prefix: 'متوسط أيام الإنجاز:',
+    progress_days_unit: 'يوم',
 
     // Tables & Feeds
     feed_title: 'النشاط الميداني المباشر',
     feed_sub: 'تدفق فوري للعمليات',
+    live_badge: 'مباشر',
     interns_table_title: 'المتدربون',
     interns_table_sub: 'الوصول المباشر لملفات الطلاب',
+    btn_full_directory: 'السجل الموسّع',
     table_col_intern: 'المتدرب',
+    table_col_governorate: 'المحافظة',
     table_col_status: 'الحالة',
     table_col_operations: 'العمليات',
     table_col_file: 'الملف الطبي',
@@ -126,8 +145,19 @@ const DeanTranslations = {
     btn_details: 'التفاصيل',
     status_active: 'نشط',
     status_completed: 'مكتمل',
+    status_pending: 'بانتظار التحاق',
+    status_risk: 'متابعة',
+    ops_suffix: 'عملية',
+    no_results: 'لا توجد نتائج مطابقة للبحث.',
 
-    // Dean Info Profile Card
+    // Activity Stream Items
+    action_rx: 'فحص روشتة',
+    action_plan: 'خطة علاج',
+    action_dispense: 'صرف طلب',
+    verified: 'موثق',
+    unverified: 'بانتظار الاعتماد',
+
+    // Dean Profile & Settings
     dean_name: 'أ.د. خالد السيد إبراهيم',
     dean_title: 'عميد كلية الصيدلة',
     dean_degree: 'أستاذ الكيمياء الحيوية والرقابة الدوائية',
@@ -141,17 +171,11 @@ const DeanTranslations = {
   }
 };
 
-/**
- * Translates a key based on current document language attribute.
- */
 function t(key) {
   const lang = document.documentElement.getAttribute('lang') || 'en';
   return (DeanTranslations[lang] && DeanTranslations[lang][key]) || DeanTranslations['en'][key] || key;
 }
 
-/**
- * Scans DOM elements with [data-i18n] and updates their textContent or attributes.
- */
 function applyDeanTranslations() {
   const lang = document.documentElement.getAttribute('lang') || 'en';
   document.querySelectorAll('[data-i18n]').forEach(el => {

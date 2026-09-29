@@ -234,14 +234,14 @@
                 <div class="card-header-left">
                   <div class="card-header-icon"><i class="bx bxs-id-card"></i></div>
                   <div>
-                    <h3 class="card-title">المتدربون <span id="dashInternsCount"
+                    <h3 class="card-title"><span data-i18n="interns_table_title">Interns</span> <span id="dashInternsCount"
                         style="color:var(--primary); font-size:0.85rem;"></span></h3>
-                    <p class="card-subtitle">الوصول المباشر لملفات الطلاب</p>
+                    <p class="card-subtitle" data-i18n="interns_table_sub">Direct Access to Student Profiles</p>
                   </div>
                 </div>
                 <button class="btn btn-outline" style="padding:6px 14px; font-size:0.8rem;"
                   onclick="App.navigateTo('interns')">
-                  السجل الموسّع <i class="bx bx-chevron-left"></i>
+                  <span data-i18n="btn_full_directory">Full Directory</span> <i class="bx bx-chevron-right"></i>
                 </button>
               </div>
 
@@ -249,10 +249,10 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>المتدرب</th>
-                      <th>العمليات</th>
-                      <th>الحالة</th>
-                      <th>الملف الطبي</th>
+                      <th data-i18n="table_col_intern">Intern</th>
+                      <th data-i18n="table_col_operations">Operations</th>
+                      <th data-i18n="table_col_status">Status</th>
+                      <th data-i18n="table_col_file">Medical File</th>
                     </tr>
                   </thead>
                   <tbody id="dashInternsTableBody">
@@ -268,11 +268,11 @@
                 <div class="card-header-left">
                   <div class="card-header-icon" style="color:var(--danger);"><i class="bx bx-broadcast"></i></div>
                   <div>
-                    <h3 class="card-title">النشاط الميداني المباشر</h3>
-                    <p class="card-subtitle">تدفق فوري للعمليات</p>
+                    <h3 class="card-title" data-i18n="feed_title">Live Field Activity Stream</h3>
+                    <p class="card-subtitle" data-i18n="feed_sub">Real-time Operations Feed</p>
                   </div>
                 </div>
-                <span class="status-badge active"><span class="status-dot"></span> مباشر</span>
+                <span class="status-badge active"><span class="status-dot"></span> <span data-i18n="live_badge">LIVE</span></span>
               </div>
 
               <div class="live-stream-list" id="liveActivityList">
