@@ -67,6 +67,46 @@ const DeanTranslations = {
     ops_suffix: 'ops',
     no_results: 'No matching results found.',
 
+    // Faculty Settings Section
+    faculty_details_title: 'Faculty Details',
+    label_university: 'University',
+    label_faculty: 'Faculty',
+    label_dean_name: 'Responsible Dean',
+    label_academic_year: 'Academic Year',
+    export_reports_title: 'Export Reports',
+    export_reports_sub: 'Official Documents',
+    btn_pdf_report: 'Field Training Grades List (PDF)',
+    btn_excel_report: 'Full Students Roster (Excel)',
+
+    // Dean Profile Section
+    badge_accredited_active: 'Accredited & Active',
+    btn_edit_profile: 'Edit Details',
+    btn_logout: 'Sign Out',
+    office_details_title: 'Accreditation & Office Details',
+    office_details_sub: 'Official Dean Information',
+    label_academic_email: 'Academic Email',
+    label_direct_phone: 'Direct Phone',
+    label_office_location: 'Office Location',
+    label_institution: 'Institution',
+    label_national_accreditation: 'National Accreditation',
+    val_naqaae_accredited: 'NAQAAE Accredited',
+    val_admin_building: 'Admin Building - Kasr Al-Ainy, Cairo',
+
+    // Modals
+    edit_modal_title: 'Edit Contact Information',
+    edit_modal_sub: 'Email, Phone & Official Office',
+    btn_cancel: 'Cancel',
+    btn_save_changes: 'Save Changes',
+
+    // Student Dossier Tabs
+    btn_back: 'Back',
+    tab_chats: 'Patient Conversations',
+    tab_rx: 'Audited Prescriptions',
+    tab_plans: 'Treatment Plans',
+    tab_orders: 'Order Dispensing',
+    tab_attendance: 'Attendance Log',
+    tab_evaluations: 'Supervisor Ratings',
+
     // Activity Stream Items
     action_rx: 'Prescription Audit',
     action_plan: 'Treatment Plan',
@@ -74,14 +114,7 @@ const DeanTranslations = {
     verified: 'Verified',
     unverified: 'Pending Verification',
 
-    // Dean Profile & Settings
-    dean_name: 'Prof. Dr. Khaled El-Sayed Ibrahim',
-    dean_title: 'Dean of Faculty of Pharmacy',
-    dean_degree: 'Professor of Biochemistry & Drug Quality Control',
-    dean_office: 'Admin Building - Kasr Al-Ainy, Cairo',
-    accreditation_status: 'Accredited',
-
-    // Modal & Toast
+    // Toast Messages
     modal_close: 'Close',
     toast_copied: 'Copied to clipboard',
     toast_lang_changed: 'Language updated'
@@ -150,6 +183,46 @@ const DeanTranslations = {
     ops_suffix: 'عملية',
     no_results: 'لا توجد نتائج مطابقة للبحث.',
 
+    // Faculty Settings Section
+    faculty_details_title: 'بيانات الكلية',
+    label_university: 'الجامعة',
+    label_faculty: 'الكلية',
+    label_dean_name: 'العميد المسؤول',
+    label_academic_year: 'العام الأكاديمي',
+    export_reports_title: 'تصدير التقارير',
+    export_reports_sub: 'مستخرجات رسمية',
+    btn_pdf_report: 'بيان درجات التدريب الميداني (PDF)',
+    btn_excel_report: 'كشف الطلاب الكامل (Excel)',
+
+    // Dean Profile Section
+    badge_accredited_active: 'معتمد نشط',
+    btn_edit_profile: 'تعديل البيانات',
+    btn_logout: 'خروج',
+    office_details_title: 'بيانات الاعتماد والمكتب',
+    office_details_sub: 'المعلومات الرسمية لعميد الكلية',
+    label_academic_email: 'البريد الأكاديمي',
+    label_direct_phone: 'الهاتف المباشر',
+    label_office_location: 'مقر المكتب',
+    label_institution: 'المؤسسة',
+    label_national_accreditation: 'الاعتماد القومي',
+    val_naqaae_accredited: 'معتمد NAQAAE',
+    val_admin_building: 'المبنى الإداري - قصر العيني، القاهرة',
+
+    // Modals
+    edit_modal_title: 'تعديل بيانات التواصل',
+    edit_modal_sub: 'البريد والهاتف والمقر الرسمي',
+    btn_cancel: 'إلغاء',
+    btn_save_changes: 'حفظ التغييرات',
+
+    // Student Dossier Tabs
+    btn_back: 'العودة',
+    tab_chats: 'محادثات المرضى',
+    tab_rx: 'الروشتات المفحوصة',
+    tab_plans: 'خطط العلاج',
+    tab_orders: 'صرف الطلبات',
+    tab_attendance: 'سجل الحضور',
+    tab_evaluations: 'تقييمات المشرف',
+
     // Activity Stream Items
     action_rx: 'فحص روشتة',
     action_plan: 'خطة علاج',
@@ -157,14 +230,7 @@ const DeanTranslations = {
     verified: 'موثق',
     unverified: 'بانتظار الاعتماد',
 
-    // Dean Profile & Settings
-    dean_name: 'أ.د. خالد السيد إبراهيم',
-    dean_title: 'عميد كلية الصيدلة',
-    dean_degree: 'أستاذ الكيمياء الحيوية والرقابة الدوائية',
-    dean_office: 'المبنى الإداري - قصر العيني، القاهرة',
-    accreditation_status: 'معتمد',
-
-    // Modal & Toast
+    // Toast Messages
     modal_close: 'إغلاق',
     toast_copied: 'تم النسخ إلى الحافظة',
     toast_lang_changed: 'تم تحديث اللغة'

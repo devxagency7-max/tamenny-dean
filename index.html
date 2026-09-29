@@ -398,22 +398,22 @@
           <!-- Detail Navigation Tabs Bar -->
           <div class="detail-nav-tabs" style="margin-top: 20px;">
             <button class="detail-tab-btn active" data-dossier-tab="chats">
-              <i class="bx bx-chat"></i> محادثات المرضى
+              <i class="bx bx-chat"></i> <span data-i18n="tab_chats">Patient Conversations</span>
             </button>
             <button class="detail-tab-btn" data-dossier-tab="rx">
-              <i class="bx bx-receipt"></i> الروشتات المفحوصة
+              <i class="bx bx-receipt"></i> <span data-i18n="tab_rx">Audited Prescriptions</span>
             </button>
             <button class="detail-tab-btn" data-dossier-tab="plans">
-              <i class="bx bx-calendar-check"></i> خطط العلاج
+              <i class="bx bx-calendar-check"></i> <span data-i18n="tab_plans">Treatment Plans</span>
             </button>
             <button class="detail-tab-btn" data-dossier-tab="orders">
-              <i class="bx bx-package"></i> صرف الطلبات
+              <i class="bx bx-package"></i> <span data-i18n="tab_orders">Order Dispensing</span>
             </button>
             <button class="detail-tab-btn" data-dossier-tab="attendance">
-              <i class="bx bx-time-five"></i> سجل الحضور
+              <i class="bx bx-time-five"></i> <span data-i18n="tab_attendance">Attendance Log</span>
             </button>
             <button class="detail-tab-btn" data-dossier-tab="evaluations">
-              <i class="bx bx-star"></i> تقييمات المشرف
+              <i class="bx bx-star"></i> <span data-i18n="tab_evaluations">Supervisor Ratings</span>
             </button>
           </div>
 
@@ -424,9 +424,8 @@
               <!-- Conversations Sidebar -->
               <div class="chat-patients-sidebar">
                 <div class="chat-sidebar-header">
-                  <span>محادثات المرضى المباشرة</span>
-                  <span class="status-badge active" style="font-size:0.7rem;"><i class="bx bx-lock-open-alt"></i> رصد
-                    معتمد</span>
+                  <span>Patient Conversations</span>
+                  <span class="status-badge active" style="font-size:0.7rem;"><i class="bx bx-lock-open-alt"></i> Verified</span>
                 </div>
                 <div id="dossierChatList">
                   <!-- Injected via app.js -->
@@ -440,12 +439,12 @@
                     <div class="chat-patient-avatar-circle" id="chatActivePatientAvatar">مح</div>
                     <div>
                       <h4 style="font-weight:800; font-size:1rem; color:var(--text-heading);"
-                        id="chatActivePatientName">الحاج محمود عبد العزيز</h4>
+                        id="chatActivePatientName">Patient Consultation</h4>
                       <span style="font-size:0.75rem; color:var(--primary); font-weight:700;"
-                        id="chatActivePatientMeta">62 سنة • سكر وضغط</span>
+                        id="chatActivePatientMeta">Clinical Log</span>
                     </div>
                   </div>
-                  <span class="status-badge active"><i class="bx bx-check-double"></i> استشارة صيدلانية</span>
+                  <span class="status-badge active"><i class="bx bx-check-double"></i> Consultation</span>
                 </div>
 
                 <div class="chat-bubbles-scroll" id="chatBubblesContainer">
@@ -481,11 +480,11 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>كود الطلب</th>
-                      <th>تاريخ الصرف</th>
-                      <th>عدد الأصناف</th>
-                      <th>القيمة الإجمالية</th>
-                      <th>حالة الطلب بالصيدلية</th>
+                      <th>Order ID</th>
+                      <th>Dispense Date</th>
+                      <th>Items Count</th>
+                      <th>Total Value</th>
+                      <th>Pharmacy Order Status</th>
                     </tr>
                   </thead>
                   <tbody id="dossierOrdersTableBody">
@@ -528,28 +527,27 @@
                 <div class="card-header-left">
                   <div class="card-header-icon"><i class="bx bxs-institution"></i></div>
                   <div>
-                    <h3 class="card-title">بيانات الكلية</h3>
-                    <p class="card-subtitle" id="settingsFacultySubtitle">جامعة القاهرة — كلية الصيدلة</p>
+                    <h3 class="card-title" data-i18n="faculty_details_title">Faculty Details</h3>
+                    <p class="card-subtitle" id="settingsFacultySubtitle">Cairo University — Faculty of Pharmacy</p>
                   </div>
                 </div>
               </div>
 
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
                 <div class="audit-card-item">
-                  <span class="stat-label">الجامعة</span>
-                  <span id="settingsUniversityName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">جامعة القاهرة</span>
+                  <span class="stat-label" data-i18n="label_university">University</span>
+                  <span id="settingsUniversityName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">Cairo University</span>
                 </div>
                 <div class="audit-card-item">
-                  <span class="stat-label">الكلية</span>
-                  <span id="settingsFacultyName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">كلية الصيدلة</span>
+                  <span class="stat-label" data-i18n="label_faculty">Faculty</span>
+                  <span id="settingsFacultyName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">Faculty of Pharmacy</span>
                 </div>
                 <div class="audit-card-item">
-                  <span class="stat-label">العميد المسؤول</span>
-                  <span id="settingsDeanName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">أ.د. خالد السيد
-                    إبراهيم</span>
+                  <span class="stat-label" data-i18n="label_dean_name">Responsible Dean</span>
+                  <span id="settingsDeanName" style="font-size: 1.1rem; font-weight:800; color:var(--text-heading);">Prof. Dr. Khaled El-Sayed</span>
                 </div>
                 <div class="audit-card-item">
-                  <span class="stat-label">العام الأكاديمي</span>
+                  <span class="stat-label" data-i18n="label_academic_year">Academic Year</span>
                   <span style="font-size: 1.1rem; font-weight:800; color:var(--primary);">2025 / 2026</span>
                 </div>
               </div>
@@ -561,19 +559,19 @@
                 <div class="card-header-left">
                   <div class="card-header-icon"><i class="bx bxs-file-pdf"></i></div>
                   <div>
-                    <h3 class="card-title">تصدير التقارير</h3>
-                    <p class="card-subtitle">مستخرجات رسمية</p>
+                    <h3 class="card-title" data-i18n="export_reports_title">Export Reports</h3>
+                    <p class="card-subtitle" data-i18n="export_reports_sub">Official Documents</p>
                   </div>
                 </div>
               </div>
 
               <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
                 <button class="btn btn-outline" style="justify-content: flex-start;" onclick="App.exportInternReport()">
-                  <i class="bx bxs-report"></i> بيان درجات التدريب الميداني (PDF)
+                  <i class="bx bxs-report"></i> <span data-i18n="btn_pdf_report">Field Training Grades List (PDF)</span>
                 </button>
                 <button class="btn btn-outline" style="justify-content: flex-start;"
-                  onclick="App.showToast('تم تصدير كشف الطلاب بصيغة Excel', 'success')">
-                  <i class="bx bxs-spreadsheet"></i> كشف الطلاب الكامل (Excel)
+                  onclick="App.showToast('Full Students Roster exported as Excel', 'success')">
+                  <i class="bx bxs-spreadsheet"></i> <span data-i18n="btn_excel_report">Full Students Roster (Excel)</span>
                 </button>
               </div>
             </div>
@@ -590,26 +588,26 @@
           <!-- Dean Profile Hero Card -->
           <div class="dean-profile-hero">
             <div class="dean-profile-main">
-              <div class="dean-hero-avatar" id="profileDeanAvatar">خ</div>
+              <div class="dean-hero-avatar" id="profileDeanAvatar">K</div>
               <div class="dean-hero-info">
                 <div class="dean-hero-title-row">
-                  <h2 class="dean-hero-name" id="profileDeanName">أ.د. خالد السيد إبراهيم</h2>
-                  <span class="status-badge active"><span class="status-dot"></span> معتمد نشط</span>
+                  <h2 class="dean-hero-name" id="profileDeanName">Prof. Dr. Khaled El-Sayed</h2>
+                  <span class="status-badge active"><span class="status-dot"></span> <span data-i18n="badge_accredited_active">Accredited & Active</span></span>
                 </div>
-                <p class="dean-hero-role" id="profileDeanTitle">عميد كلية الصيدلة — جامعة القاهرة</p>
-                <p class="dean-hero-degree" id="profileDeanDegree">أستاذ الكيمياء الحيوية والرقابة الدوائية</p>
+                <p class="dean-hero-role" id="profileDeanTitle">Dean of Faculty of Pharmacy — Cairo University</p>
+                <p class="dean-hero-degree" id="profileDeanDegree">Professor of Biochemistry & Drug Quality Control</p>
                 <div class="dean-hero-tags">
-                  <span class="hero-tag"><i class="bx bx-calendar"></i> العام الأكاديمي: <strong>2025 / 2026</strong></span>
+                  <span class="hero-tag"><i class="bx bx-calendar"></i> Academic Year: <strong>2025 / 2026</strong></span>
                 </div>
               </div>
             </div>
 
             <div class="dean-profile-actions">
               <button class="btn btn-primary" onclick="App.openEditProfileModal()">
-                <i class="bx bx-edit-alt"></i> تعديل البيانات
+                <i class="bx bx-edit-alt"></i> <span data-i18n="btn_edit_profile">Edit Details</span>
               </button>
               <button class="btn btn-outline-danger" onclick="App.logout()">
-                <i class="bx bx-log-out"></i> خروج
+                <i class="bx bx-log-out"></i> <span data-i18n="btn_logout">Sign Out</span>
               </button>
             </div>
           </div>
@@ -620,36 +618,36 @@
               <div class="card-header-left">
                 <div class="card-header-icon"><i class="bx bxs-id-card"></i></div>
                 <div>
-                  <h3 class="card-title">بيانات الاعتماد والمكتب</h3>
-                  <p class="card-subtitle">المعلومات الرسمية لعميد الكلية</p>
+                  <h3 class="card-title" data-i18n="office_details_title">Accreditation & Office Details</h3>
+                  <p class="card-subtitle" data-i18n="office_details_sub">Official Dean Information</p>
                 </div>
               </div>
             </div>
 
             <div class="profile-details-grid">
               <div class="profile-detail-item">
-                <span class="detail-label"><i class="bx bx-envelope"></i> البريد الأكاديمي</span>
+                <span class="detail-label"><i class="bx bx-envelope"></i> <span data-i18n="label_academic_email">Academic Email</span></span>
                 <span class="detail-value" id="profileDeanEmail">dean.pharmacy@cu.edu.eg</span>
               </div>
 
               <div class="profile-detail-item">
-                <span class="detail-label"><i class="bx bx-phone"></i> الهاتف المباشر</span>
+                <span class="detail-label"><i class="bx bx-phone"></i> <span data-i18n="label_direct_phone">Direct Phone</span></span>
                 <span class="detail-value" id="profileDeanPhone" dir="ltr">+20 2 3567 6100</span>
               </div>
 
               <div class="profile-detail-item" style="grid-column: span 2;">
-                <span class="detail-label"><i class="bx bx-map-pin"></i> مقر المكتب</span>
-                <span class="detail-value" id="profileDeanOffice">المبنى الإداري - قصر العيني، القاهرة</span>
+                <span class="detail-label"><i class="bx bx-map-pin"></i> <span data-i18n="label_office_location">Office Location</span></span>
+                <span class="detail-value" id="profileDeanOffice">Admin Building - Kasr Al-Ainy, Cairo</span>
               </div>
 
               <div class="profile-detail-item">
-                <span class="detail-label"><i class="bx bx-buildings"></i> المؤسسة</span>
-                <span class="detail-value" id="profileDeanInstitution">جامعة القاهرة — كلية الصيدلة</span>
+                <span class="detail-label"><i class="bx bx-buildings"></i> <span data-i18n="label_institution">Institution</span></span>
+                <span class="detail-value" id="profileDeanInstitution">Cairo University — Faculty of Pharmacy</span>
               </div>
 
               <div class="profile-detail-item">
-                <span class="detail-label"><i class="bx bx-certification"></i> الاعتماد القومي</span>
-                <span class="detail-value" style="color:var(--success);"><i class="bx bx-check-circle"></i> معتمد NAQAAE</span>
+                <span class="detail-label"><i class="bx bx-certification"></i> <span data-i18n="label_national_accreditation">National Accreditation</span></span>
+                <span class="detail-value" style="color:var(--success);"><i class="bx bx-check-circle"></i> <span data-i18n="val_naqaae_accredited">NAQAAE Accredited</span></span>
               </div>
             </div>
           </div>
@@ -668,8 +666,8 @@
         <div class="card-header-left">
           <div class="card-header-icon"><i class="bx bx-edit"></i></div>
           <div>
-            <h3 class="card-title" style="font-size:1.15rem;">تعديل بيانات التواصل</h3>
-            <p class="card-subtitle">البريد والهاتف والمقر الرسمي</p>
+            <h3 class="card-title" style="font-size:1.15rem;" data-i18n="edit_modal_title">Edit Contact Information</h3>
+            <p class="card-subtitle" data-i18n="edit_modal_sub">Email, Phone & Official Office</p>
           </div>
         </div>
         <button class="modal-close-btn" onclick="App.closeEditProfileModal()">
@@ -679,7 +677,7 @@
 
       <form id="editProfileForm" onsubmit="App.saveProfileDetails(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:16px;">
         <div class="form-group">
-          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;">البريد الأكاديمي</label>
+          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;" data-i18n="label_academic_email">Academic Email</label>
           <div class="form-input-wrapper" style="position:relative; display:flex; align-items:center;">
             <i class="bx bx-envelope" style="position:absolute; inset-inline-start:14px; color:var(--text-light); font-size:1.2rem;"></i>
             <input type="email" id="editDeanEmail" class="form-input" style="width:100%; padding:11px 14px 11px 40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-family:inherit;" required>
@@ -687,7 +685,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;">الهاتف المباشر</label>
+          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;" data-i18n="label_direct_phone">Direct Phone</label>
           <div class="form-input-wrapper" style="position:relative; display:flex; align-items:center;">
             <i class="bx bx-phone" style="position:absolute; inset-inline-start:14px; color:var(--text-light); font-size:1.2rem;"></i>
             <input type="text" id="editDeanPhone" class="form-input" dir="ltr" style="width:100%; padding:11px 14px 11px 40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-family:inherit;" required>
@@ -695,7 +693,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;">مقر المكتب</label>
+          <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem;" data-i18n="label_office_location">Office Location</label>
           <div class="form-input-wrapper" style="position:relative; display:flex; align-items:center;">
             <i class="bx bx-map-pin" style="position:absolute; inset-inline-start:14px; color:var(--text-light); font-size:1.2rem;"></i>
             <input type="text" id="editDeanOffice" class="form-input" style="width:100%; padding:11px 14px 11px 40px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-family:inherit;" required>
@@ -703,8 +701,8 @@
         </div>
 
         <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
-          <button type="button" class="btn btn-outline" onclick="App.closeEditProfileModal()">إلغاء</button>
-          <button type="submit" class="btn btn-primary"><i class="bx bx-check"></i> حفظ التغييرات</button>
+          <button type="button" class="btn btn-outline" onclick="App.closeEditProfileModal()" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bx bx-check"></i> <span data-i18n="btn_save_changes">Save Changes</span></button>
         </div>
       </form>
     </div>
