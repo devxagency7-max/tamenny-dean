@@ -569,9 +569,11 @@ const App = {
 
     if (avgEl) {
       const daysUnit = lang === 'en' ? 'Days' : 'يوم';
-      avgEl.textContent = progress.averageDaysToCompletion
-        ? `${progress.averageDaysToCompletion.toFixed(1)} ${daysUnit}`
-        : '—';
+      if (progress.averageDaysToCompletion && progress.averageDaysToCompletion > 0) {
+        avgEl.textContent = `${progress.averageDaysToCompletion.toFixed(1)} ${daysUnit}`;
+      } else {
+        avgEl.textContent = `0 ${daysUnit}`;
+      }
     }
   },
 
@@ -692,7 +694,7 @@ const App = {
             <span style="font-size:0.85rem; color:var(--text-muted);">${i.governorate}</span>
           </td>
           <td>
-            <span style="font-weight:700; color:var(--primary); font-size:0.95rem;">${i.operationsCount} عملية</span>
+            <span style="font-weight:700; color:var(--primary); font-size:0.95rem;">${i.operationsCount} ${t('ops_suffix')}</span>
           </td>
           <td>
             <span class="status-badge ${statusClass}">
@@ -703,7 +705,7 @@ const App = {
           <td>
             <button class="table-action-btn" onclick="App.openInternProfile('${i.id}')">
               <i class="bx bx-folder-open"></i>
-              الملف الطبي
+              ${t('btn_view_file')}
             </button>
           </td>
         </tr>
@@ -775,10 +777,10 @@ const App = {
     const statusEl = document.getElementById('dossierStatus');
     if (statusEl) {
       let statusClass = 'active';
-      let statusLabel = 'نشط';
-      if (intern.status === 'completed') { statusClass = 'completed'; statusLabel = 'مكتمل'; }
-      if (intern.status === 'pending')   { statusClass = 'pending'; statusLabel = 'بانتظار التحاق'; }
-      if (intern.status === 'risk')      { statusClass = 'risk'; statusLabel = 'متابعة'; }
+      let statusLabel = t('status_active');
+      if (intern.status === 'completed') { statusClass = 'completed'; statusLabel = t('status_completed'); }
+      if (intern.status === 'pending')   { statusClass = 'pending'; statusLabel = t('status_pending'); }
+      if (intern.status === 'risk')      { statusClass = 'risk'; statusLabel = t('status_risk'); }
       statusEl.className = `status-badge ${statusClass}`;
       statusEl.innerHTML = `<span class="status-dot"></span> ${statusLabel}`;
     }
@@ -1070,7 +1072,7 @@ const App = {
       <div class="audit-card-item">
         <div class="audit-item-top">
           <span class="audit-item-badge" style="background:var(--success-light); color:var(--success-text);"><i class="bx bx-star"></i> تقييم شهري</span>
-          <span class="audit-item-date">${ev.evaluatedAt ? new Date(ev.evaluatedAt).toLocaleDateString('ar-EG') : ''}</span>
+          <span class="audit-item-date">${ev.evaluatedAt ? new Date(ev.evaluatedAt).toLocaleDateString(locale) : ''}</span>
         </div>
         ${scoreRow('المعرفة السريرية', ev.clinicalKnowledgeScore)}
         ${scoreRow('مهارات التواصل', ev.communicationScore)}
@@ -1137,15 +1139,22 @@ const App = {
   animateCount(elementId, targetValue) {
     const el = document.getElementById(elementId);
     if (!el) return;
+    const lang = document.documentElement.getAttribute('lang') || 'en';
+    const locale = lang === 'en' ? 'en-US' : 'ar-EG';
+    const num = Number(targetValue) || 0;
+    if (num === 0) {
+      el.textContent = (0).toLocaleString(locale);
+      return;
+    }
     let current = 0;
-    const step = Math.ceil(targetValue / 24);
+    const step = Math.ceil(num / 24) || 1;
     const timer = setInterval(() => {
       current += step;
-      if (current >= targetValue) {
-        el.textContent = targetValue.toLocaleString('ar-EG');
+      if (current >= num) {
+        el.textContent = num.toLocaleString(locale);
         clearInterval(timer);
       } else {
-        el.textContent = current.toLocaleString('ar-EG');
+        el.textContent = current.toLocaleString(locale);
       }
     }, 30);
   }
