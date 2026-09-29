@@ -1,6 +1,6 @@
 # تقرير فحص شامل — بورتال عميد الكلية (Faculty Dean Portal)
 **التاريخ:** 2026-09-15
-**النطاق:** فحص كامل لربط `tamenny-dean-main` بالباك إند الحقيقي (`http://204.168.149.185/api/v1`) طبقًا لـ `FACULTY_DEAN_AND_INTERN_BACKEND_SPEC.md` v2.1.0.
+**النطاق:** فحص كامل لربط `tamenny-dean-main` بالباك إند الحقيقي (`http://187.7.30.23/api/v1`) طبقًا لـ `FACULTY_DEAN_AND_INTERN_BACKEND_SPEC.md` v2.1.0.
 
 ---
 
