@@ -42,6 +42,7 @@ const DeanTranslations = {
 
     // Progress Section
     progress_chart_title: 'Training Hours Progress Distribution',
+    progress_chart_sub: 'Average Completion Time:',
     progress_chart_sub_prefix: 'Average Completion Time:',
     progress_days_unit: 'Days',
 
@@ -161,6 +162,7 @@ const DeanTranslations = {
 
     // Progress Section
     progress_chart_title: 'توزيع نسب إنجاز ساعات التدريب',
+    progress_chart_sub: 'متوسط أيام الإنجاز:',
     progress_chart_sub_prefix: 'متوسط أيام الإنجاز:',
     progress_days_unit: 'يوم',
 
