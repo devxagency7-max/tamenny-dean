@@ -100,7 +100,7 @@
         <!-- Global Search Input -->
         <div class="topbar-search">
           <i class="bx bx-search"></i>
-          <input type="text" id="topbarSearchInput" class="search-input" placeholder="بحث عن متدرب، كود، صيدلية...">
+          <input type="text" id="topbarSearchInput" class="search-input" data-i18n="search_placeholder" data-i18n-attr="placeholder" placeholder="Search intern, ID, pharmacy...">
           <span class="search-shortcut">⌘K</span>
         </div>
 
@@ -295,14 +295,14 @@
               <div class="card-header-left">
                 <div class="card-header-icon"><i class="bx bxs-id-card"></i></div>
                 <div>
-                  <h3 class="card-title">سجل متدربي الكلية <span id="internsFilteredCount"
+                  <h3 class="card-title"><span data-i18n="page_interns_title">Faculty Interns Directory</span> <span id="internsFilteredCount"
                       style="color:var(--primary); font-size:0.9rem;"></span></h3>
-                  <p class="card-subtitle">متابعة الأداء وساعات التدريب</p>
+                  <p class="card-subtitle" data-i18n="page_interns_sub">Track Performance & Training Hours</p>
                 </div>
               </div>
               <div class="toolbar-actions">
                 <button class="btn btn-primary" onclick="App.exportInternReport()">
-                  <i class="bx bx-printer"></i> طباعة الكشف
+                  <i class="bx bx-printer"></i> <span data-i18n="btn_print">Print Roster</span>
                 </button>
               </div>
             </div>
@@ -310,21 +310,21 @@
             <div class="table-toolbar" style="margin-top: 14px;">
               <div class="toolbar-search">
                 <i class="bx bx-search"></i>
-                <input type="text" id="tableSearchInput" placeholder="بحث بالاسم، رقم القيد، أو الصيدلية...">
+                <input type="text" id="tableSearchInput" data-i18n="hero_search_placeholder" data-i18n-attr="placeholder" placeholder="Search by name, ID, or pharmacy name...">
               </div>
 
               <div class="filter-pills">
                 <button class="filter-pill active" data-filter="all">
-                  <i class="bx bx-grid-alt"></i> الكل
+                  <i class="bx bx-grid-alt"></i> <span data-i18n="filter_all">All</span>
                 </button>
                 <button class="filter-pill" data-filter="active">
-                  <i class="bx bx-pulse"></i> نشط
+                  <i class="bx bx-pulse"></i> <span data-i18n="filter_active">Active</span>
                 </button>
                 <button class="filter-pill" data-filter="completed">
-                  <i class="bx bx-check-circle"></i> مكتمل
+                  <i class="bx bx-check-circle"></i> <span data-i18n="filter_completed">Completed</span>
                 </button>
                 <button class="filter-pill" data-filter="risk">
-                  <i class="bx bx-error-circle"></i> متابعة
+                  <i class="bx bx-error-circle"></i> <span data-i18n="filter_under_review">Under Review</span>
                 </button>
               </div>
             </div>
@@ -333,11 +333,11 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>المتدرب</th>
-                    <th>المحافظة</th>
-                    <th>العمليات</th>
-                    <th>الحالة</th>
-                    <th>الملف الطبي</th>
+                    <th data-i18n="table_col_intern">Intern</th>
+                    <th data-i18n="table_col_governorate">Governorate</th>
+                    <th data-i18n="table_col_operations">Operations</th>
+                    <th data-i18n="table_col_status">Status</th>
+                    <th data-i18n="table_col_file">Medical File</th>
                   </tr>
                 </thead>
                 <tbody id="internsTableBody">

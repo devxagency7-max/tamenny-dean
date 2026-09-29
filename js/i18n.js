@@ -17,7 +17,7 @@ const DeanTranslations = {
     faculty_name: 'Faculty of Pharmacy',
     faculty_uni: 'Cairo University',
 
-    // Topbar
+    // Topbar & Search
     search_placeholder: 'Search intern, ID, pharmacy...',
     title_dashboard: 'Dashboard',
     title_interns: 'Interns Directory',
@@ -51,6 +51,9 @@ const DeanTranslations = {
     live_badge: 'LIVE',
     interns_table_title: 'Interns',
     interns_table_sub: 'Direct Access to Student Profiles',
+    page_interns_title: 'Faculty Interns Directory',
+    page_interns_sub: 'Track Performance & Training Hours',
+    btn_print: 'Print Roster',
     btn_full_directory: 'Full Directory',
     table_col_intern: 'Intern',
     table_col_governorate: 'Governorate',
@@ -133,7 +136,7 @@ const DeanTranslations = {
     faculty_name: 'كلية الصيدلة',
     faculty_uni: 'جامعة القاهرة',
 
-    // Topbar
+    // Topbar & Search
     search_placeholder: 'بحث عن متدرب، كود، صيدلية...',
     title_dashboard: 'الرئيسية',
     title_interns: 'سجل المتدربين',
@@ -167,6 +170,9 @@ const DeanTranslations = {
     live_badge: 'مباشر',
     interns_table_title: 'المتدربون',
     interns_table_sub: 'الوصول المباشر لملفات الطلاب',
+    page_interns_title: 'سجل متدربي الكلية',
+    page_interns_sub: 'متابعة الأداء وساعات التدريب',
+    btn_print: 'طباعة الكشف',
     btn_full_directory: 'السجل الموسّع',
     table_col_intern: 'المتدرب',
     table_col_governorate: 'المحافظة',
