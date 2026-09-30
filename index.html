@@ -612,6 +612,7 @@
                     <th data-i18n="col_experience">Experience</th>
                     <th data-i18n="col_capacity">Intern Load</th>
                     <th data-i18n="table_col_status">Status</th>
+                    <th data-i18n="table_col_actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="supervisorsTableBody">
@@ -964,6 +965,49 @@
           <button class="btn btn-outline" onclick="App.closeSupervisorPasswordModal()" data-i18n="modal_close">Close</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Edit Academic Supervisor Modal (Part 4.2 PUT enhancement) -->
+  <div class="modal-overlay" id="editSupervisorModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="card-header-left">
+          <div class="card-header-icon"><i class="bx bx-edit"></i></div>
+          <div>
+            <h3 class="card-title" style="font-size:1.15rem;" data-i18n="modal_edit_supervisor_title">Edit Academic Supervisor</h3>
+            <p class="card-subtitle" id="editSupervisorSubtitle" data-i18n="modal_edit_supervisor_sub">Update capacity and credentials</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="App.closeEditSupervisorModal()">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <form id="editSupervisorForm" onsubmit="App.saveSupervisorChanges(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="editSupervisorId">
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_syndicate_license">Syndicate License</label>
+          <input type="text" id="editSupLicense" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" placeholder="SYN-2027-99120">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_years_experience">Years of Experience</label>
+            <input type="number" id="editSupExperience" class="form-input" min="0" max="60" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_max_capacity">Max Intern Capacity</label>
+            <input type="number" id="editSupCapacity" class="form-input" min="1" max="50" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="App.closeEditSupervisorModal()" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveEditSupervisor"><i class="bx bx-check"></i> <span data-i18n="btn_save_changes">Save Changes</span></button>
+        </div>
+      </form>
     </div>
   </div>
 

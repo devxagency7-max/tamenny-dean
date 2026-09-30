@@ -85,6 +85,22 @@ const DeanApiService = {
     return res;
   },
 
+  async updateSupervisor(id, payload) {
+    const res = await this.request(DeanConfig.endpoints.updateSupervisor(id), {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    return res;
+  },
+
+  async setSupervisorActive(id, isActive) {
+    const res = await this.request(DeanConfig.endpoints.setSupervisorActive(id), {
+      method: 'POST',
+      body: JSON.stringify({ isActive })
+    });
+    return res;
+  },
+
   // --- Training Programs (Part 4.3 API Guide) ---
   async getTrainingPrograms() {
     const res = await this.request(DeanConfig.endpoints.trainingPrograms);
@@ -167,6 +183,11 @@ const DeanApiService = {
 
   async getPartnerPharmacies() {
     const res = await this.request(DeanConfig.endpoints.partnerPharmacies);
+    return (res && Array.isArray(res.data)) ? res.data : [];
+  },
+
+  async getInternEvaluations(id) {
+    const res = await this.request(DeanConfig.endpoints.internEvaluations(id));
     return (res && Array.isArray(res.data)) ? res.data : [];
   },
 

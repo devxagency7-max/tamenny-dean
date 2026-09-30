@@ -837,19 +837,22 @@ const App = {
   },
 
   // --- Render Academic Supervisors (Part 4.2 API Guide) ---
+  supervisorsCache: [],
+
   async renderSupervisors() {
     const tbody = document.getElementById('supervisorsTableBody');
     const badge = document.getElementById('sidebarSupervisorsCount');
 
     const supervisors = await DeanApiService.getSupervisors();
-    if (badge) badge.textContent = supervisors.length;
+    this.supervisorsCache = supervisors || [];
+    if (badge) badge.textContent = this.supervisorsCache.length;
 
     if (!tbody) return;
 
-    if (supervisors.length === 0) {
+    if (this.supervisorsCache.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align:center; padding: 40px; color:var(--text-muted);">
+          <td colspan="7" style="text-align:center; padding: 40px; color:var(--text-muted);">
             <i class="bx bx-group" style="font-size: 2.4rem; color:var(--text-light); margin-bottom: 8px; display:block;"></i>
             No academic supervisors created yet for your faculty.
           </td>
@@ -858,11 +861,12 @@ const App = {
       return;
     }
 
-    tbody.innerHTML = supervisors.map(s => {
+    tbody.innerHTML = this.supervisorsCache.map(s => {
       const initial = (s.name || 'Dr').trim().slice(0, 2);
       const activeCount = s.currentActiveInternCount ?? 0;
       const maxCap = s.maxInternCapacity ?? 10;
       const pct = Math.min(100, Math.round((activeCount / maxCap) * 100));
+      const isActive = s.isActive !== false;
       return `
         <tr>
           <td>
@@ -892,14 +896,107 @@ const App = {
             </div>
           </td>
           <td>
-            <span class="status-badge ${s.isActive !== false ? 'active' : 'risk'}">
+            <span class="status-badge ${isActive ? 'active' : 'risk'}">
               <span class="status-dot"></span>
-              ${s.isActive !== false ? t('status_active') : 'Inactive'}
+              ${isActive ? t('status_active') : t('status_inactive')}
             </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="table-action-btn" onclick="App.openEditSupervisorModal('${s.id}')" title="${t('btn_edit_supervisor')}">
+                <i class="bx bx-edit"></i>
+              </button>
+              <button class="table-action-btn ${isActive ? 'danger-hover' : 'success-hover'}" style="color:${isActive ? 'var(--danger)' : 'var(--success)'};" onclick="App.toggleSupervisorActive('${s.id}', ${isActive})" title="${isActive ? t('btn_deactivate') : t('btn_activate')}">
+                <i class="bx ${isActive ? 'bx-pause-circle' : 'bx-play-circle'}"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+  },
+
+  // --- Supervisor Edit Modal Handlers (Part 4.2 PUT enhancement) ---
+  openEditSupervisorModal(supervisorId) {
+    const s = (this.supervisorsCache || []).find(item => item.id === supervisorId);
+    if (!s) return;
+
+    const idInput = document.getElementById('editSupervisorId');
+    const licenseInput = document.getElementById('editSupLicense');
+    const expInput = document.getElementById('editSupExperience');
+    const capInput = document.getElementById('editSupCapacity');
+
+    if (idInput) idInput.value = s.id;
+    if (licenseInput) licenseInput.value = s.syndicateLicenseNumber || '';
+    if (expInput) expInput.value = s.yearsOfExperience ?? '';
+    if (capInput) capInput.value = s.maxInternCapacity ?? '';
+
+    const sub = document.getElementById('editSupervisorSubtitle');
+    if (sub) sub.textContent = s.name ? `${s.name} (${s.email})` : 'Update capacity and credentials';
+
+    const modal = document.getElementById('editSupervisorModal');
+    if (modal) modal.classList.add('active');
+  },
+
+  closeEditSupervisorModal() {
+    const modal = document.getElementById('editSupervisorModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  async saveSupervisorChanges(e) {
+    e.preventDefault();
+    const id = document.getElementById('editSupervisorId')?.value;
+    if (!id) return;
+
+    const btn = document.getElementById('btnSaveEditSupervisor');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Saving...'; }
+
+    const payload = {};
+    const license = document.getElementById('editSupLicense')?.value?.trim();
+    const exp = document.getElementById('editSupExperience')?.value;
+    const cap = document.getElementById('editSupCapacity')?.value;
+
+    if (license) payload.syndicateLicenseNumber = license;
+    if (exp !== '' && exp !== undefined) payload.yearsOfExperience = parseInt(exp);
+    if (cap !== '' && cap !== undefined) payload.maxInternCapacity = parseInt(cap);
+
+    try {
+      const res = await DeanApiService.updateSupervisor(id, payload);
+      if (res && res.success) {
+        this.closeEditSupervisorModal();
+        this.showToast('تم تحديث بيانات المشرف بنجاح', 'success');
+        await this.renderSupervisors();
+      } else {
+        this.showToast(res ? res.message : 'فشل تحديث بيانات المشرف', 'error');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'خطأ أثناء تحديث بيانات المشرف', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+    }
+  },
+
+  async toggleSupervisorActive(id, currentIsActive) {
+    const nextState = !currentIsActive;
+    const confirmMsg = nextState
+      ? 'هل أنت متأكد من تفعيل هذا المشرف الأكاديمي لإتاحة تسكين طلاب جدد معه؟'
+      : 'هل أنت متأكد من تعطيل هذا المشرف؟ (لن يتاح لتسكين طلاب جدد، مع بقاء طلابه الحاليين نشطين)';
+    
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      this.showToast('جاري تحديث حالة المشرف...', 'info');
+      const res = await DeanApiService.setSupervisorActive(id, nextState);
+      if (res && res.success) {
+        this.showToast(nextState ? 'تم تفعيل حساب المشرف بنجاح' : 'تم تعطيل حساب المشرف بنجاح', 'success');
+        await this.renderSupervisors();
+      } else {
+        this.showToast(res ? res.message : 'تعذر تحديث حالة المشرف', 'error');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'خطأ أثناء تحديث حالة المشرف', 'error');
+    }
   },
 
   // --- Supervisor Creation Modal handlers ---
@@ -1004,11 +1101,12 @@ const App = {
       progSelect.innerHTML = '<option value="">No training programs found</option>';
     }
 
-    // Supervisors
-    if (supervisors && supervisors.length > 0) {
-      supSelect.innerHTML = supervisors.map(s => `<option value="${s.id}">${s.name} (${s.currentActiveInternCount ?? 0}/${s.maxInternCapacity ?? 10})</option>`).join('');
+    // Supervisors (only active supervisors are eligible for new placement)
+    const activeSupervisors = (supervisors || []).filter(s => s.isActive !== false);
+    if (activeSupervisors.length > 0) {
+      supSelect.innerHTML = activeSupervisors.map(s => `<option value="${s.id}">${s.name} (${s.currentActiveInternCount ?? 0}/${s.maxInternCapacity ?? 10})</option>`).join('');
     } else {
-      supSelect.innerHTML = '<option value="">No supervisors created yet (Add supervisor first)</option>';
+      supSelect.innerHTML = '<option value="">No active supervisors available (Add or activate supervisor first)</option>';
     }
 
     // Pharmacies & Branches
@@ -1094,6 +1192,9 @@ const App = {
     }
     if (!intern.attendanceLogs || intern.attendanceLogs.length === 0) {
       intern.attendanceLogs = await DeanApiService.getInternActivityLogs(internId);
+    }
+    if (!intern.evaluations || intern.evaluations.length === 0) {
+      intern.evaluations = await DeanApiService.getInternEvaluations(internId);
     }
 
     this.currentIntern = intern;
@@ -1413,9 +1514,13 @@ const App = {
     const container = document.getElementById('dossierEvaluationsList');
     if (!container) return;
 
+    const lang = document.documentElement.getAttribute('lang') || 'en';
+    const isAr = lang === 'ar';
+    const locale = isAr ? 'ar-EG' : 'en-US';
+
     const evaluations = intern.evaluations || [];
     if (evaluations.length === 0) {
-      container.innerHTML = `<p style="text-align:center; padding:24px; color:var(--text-muted);">لم يتم تسجيل تقييمات من المشرف بعد.</p>`;
+      container.innerHTML = `<p style="text-align:center; padding:32px 24px; color:var(--text-muted);"><i class="bx bx-award" style="font-size:32px; display:block; margin-bottom:8px; opacity:0.4;"></i>${isAr ? 'لم يتم تسجيل تقييمات من المشرف بعد.' : 'No evaluations submitted yet by the supervisor.'}</p>`;
       return;
     }
 
@@ -1432,16 +1537,16 @@ const App = {
     container.innerHTML = evaluations.map(ev => `
       <div class="audit-card-item">
         <div class="audit-item-top">
-          <span class="audit-item-badge" style="background:var(--success-light); color:var(--success-text);"><i class="bx bx-star"></i> تقييم شهري</span>
+          <span class="audit-item-badge" style="background:var(--success-light); color:var(--success-text);"><i class="bx bx-star"></i> ${isAr ? 'تقييم دوري' : 'Periodic Evaluation'}</span>
           <span class="audit-item-date">${ev.evaluatedAt ? new Date(ev.evaluatedAt).toLocaleDateString(locale) : ''}</span>
         </div>
-        ${scoreRow('المعرفة السريرية', ev.clinicalKnowledgeScore)}
-        ${scoreRow('مهارات التواصل', ev.communicationScore)}
-        ${scoreRow('الالتزام والأخلاقيات المهنية', ev.ethicsAndDisciplineScore)}
+        ${scoreRow(isAr ? 'المعرفة السريرية' : 'Clinical Knowledge', ev.clinicalKnowledgeScore)}
+        ${scoreRow(isAr ? 'مهارات التواصل' : 'Communication Skills', ev.communicationScore)}
+        ${scoreRow(isAr ? 'الالتزام والأخلاقيات المهنية' : 'Professional Ethics & Discipline', ev.ethicsAndDisciplineScore)}
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-color-subtle);">
-          <span style="font-weight:800; color:var(--primary);">التقييم العام: ${ev.overallScore} / 5</span>
+          <span style="font-weight:800; color:var(--primary);">${isAr ? 'التقييم العام' : 'Overall Rating'}: ${ev.overallScore} / 5</span>
         </div>
-        ${ev.supervisorComments ? `<p style="font-size:0.82rem; color:var(--text-main); margin-top:6px;"><strong>ملاحظات المشرف:</strong> ${ev.supervisorComments}</p>` : ''}
+        ${ev.supervisorComments ? `<p style="font-size:0.82rem; color:var(--text-main); margin-top:6px;"><strong>${isAr ? 'ملاحظات المشرف' : 'Supervisor Comments'}:</strong> ${ev.supervisorComments}</p>` : ''}
       </div>
     `).join('');
   },

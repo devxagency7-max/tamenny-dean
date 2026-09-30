@@ -158,6 +158,12 @@ const DeanTranslations = {
     password_modal_title: 'Supervisor Account Minted',
     password_modal_msg: 'Please share this one-time generated password with the supervisor now. It will not be displayed again.',
     btn_copy_password: 'Copy Password',
+    modal_edit_supervisor_title: 'Edit Academic Supervisor',
+    modal_edit_supervisor_sub: 'Update capacity and credentials',
+    btn_edit_supervisor: 'Edit Supervisor',
+    btn_deactivate: 'Deactivate',
+    btn_activate: 'Activate',
+    status_inactive: 'Inactive',
 
     // Supervisor Workspace (Part 5 & 7 API Guide)
     nav_supervisor_interns: 'My Interns',
@@ -392,6 +398,12 @@ const DeanTranslations = {
     password_modal_title: 'تم إنشاء حساب المشرف بنجاح',
     password_modal_msg: 'يرجى مشاركة كلمة المرور التي تم توليدها لمرة واحدة مع المشرف الآن. لن تظهر مرة أخرى.',
     btn_copy_password: 'نسخ كلمة المرور',
+    modal_edit_supervisor_title: 'تعديل بيانات المشرف الأكاديمي',
+    modal_edit_supervisor_sub: 'تحديث حمولة الطلاب وبيانات الترخيص والخبرة',
+    btn_edit_supervisor: 'تعديل المشرف',
+    btn_deactivate: 'تعطيل الحساب',
+    btn_activate: 'تفعيل الحساب',
+    status_inactive: 'معطل',
 
     // Supervisor Workspace (Part 5 & 7 API Guide)
     nav_supervisor_interns: 'المتدربون التابعون لي',
