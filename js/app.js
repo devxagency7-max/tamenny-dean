@@ -866,6 +866,9 @@ const App = {
     const originalText = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Minting...'; }
 
+    const passInput = document.getElementById('supPassword');
+    const customPassword = passInput ? passInput.value.trim() : '';
+
     const payload = {
       name: document.getElementById('supName').value.trim(),
       email: document.getElementById('supEmail').value.trim(),
@@ -875,6 +878,10 @@ const App = {
       maxInternCapacity: parseInt(document.getElementById('supCapacity').value, 10) || 10
     };
 
+    if (customPassword) {
+      payload.password = customPassword;
+    }
+
     const res = await DeanApiService.createSupervisor(payload);
 
     if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
@@ -883,11 +890,12 @@ const App = {
       this.closeCreateSupervisorModal();
       this.renderSupervisors();
 
-      // Show generated one-time password
+      // Show generated or custom password
       const passwordBox = document.getElementById('generatedPasswordBox');
-      if (passwordBox && res.data && res.data.generatedPassword) {
-        passwordBox.textContent = res.data.generatedPassword;
-        this.latestGeneratedPassword = res.data.generatedPassword;
+      const passToShow = (res.data && res.data.generatedPassword) || customPassword || '—';
+      if (passwordBox) {
+        passwordBox.textContent = passToShow;
+        this.latestGeneratedPassword = passToShow;
       }
       const passModal = document.getElementById('supervisorPasswordModal');
       if (passModal) passModal.classList.add('active');
