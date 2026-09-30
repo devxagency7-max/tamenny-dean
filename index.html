@@ -71,7 +71,12 @@
         </a>
 
         <!-- Supervisor Navigation Items -->
-        <span class="nav-section-title supervisor-only-nav" style="display:none;">SUPERVISOR WORKSPACE</span>
+        <span class="nav-section-title supervisor-only-nav" style="display:none;" data-i18n="nav_section_supervisor">SUPERVISOR WORKSPACE</span>
+
+        <a class="nav-item supervisor-only-nav" data-view="supervisor-dashboard" style="display:none;">
+          <i class="bx bxs-dashboard"></i>
+          <span data-i18n="nav_supervisor_dashboard">Supervisor Dashboard</span>
+        </a>
 
         <a class="nav-item supervisor-only-nav" data-view="supervisor-interns" style="display:none;">
           <i class="bx bxs-user-check"></i>
@@ -621,6 +626,382 @@
               </table>
             </div>
           </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION: SUPERVISOR - DASHBOARD & KPI AUDIT
+             ================================================================ -->
+        <section class="view-section" id="view-supervisor-dashboard">
+          
+          <!-- Supervisor Hero / Welcome Card -->
+          <div class="card-panel" style="margin-bottom: 24px; background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-2) 100%); border-left: 4px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div>
+                <span class="badge badge-primary" style="margin-bottom:8px; display:inline-flex; align-items:center; gap:6px;">
+                  <i class="bx bxs-shield-plus"></i> <span data-i18n="badge_supervisor_role">بوابة المشرف الأكاديمي والمعيد (Supervisor)</span>
+                </span>
+                <h2 style="font-size:1.45rem; font-weight:800; color:var(--text-heading); margin-bottom:6px;" id="supDashboardWelcome">
+                  لوحة المتابعة والاعتماد السريري للمتدربين
+                </h2>
+                <p style="font-size:0.88rem; color:var(--text-muted); max-width:680px; line-height:1.5;">
+                  متابعة شاملة لقرارات المتدربين السريرية، فحص واعتماد المسودات الطبية (Drafts)، مراقبة استشارات المرضى والشاتات، توثيق ساعات التدريب، وتقييم الأداء الأكاديمي والمهني.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="App.navigateTo('supervisor-drafts')">
+                  <i class="bx bx-check-double"></i> <span data-i18n="btn_review_queue">طابور مراجعة المسودات</span>
+                </button>
+                <button class="btn btn-outline" onclick="App.navigateTo('supervisor-interns')">
+                  <i class="bx bx-user-check"></i> <span data-i18n="btn_my_interns">قائمة المتدربين</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid (4 Cards) -->
+          <div class="metrics-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px;">
+            
+            <!-- 1. Active Interns -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <div class="metric-icon primary"><i class="bx bxs-user-detail"></i></div>
+                <span class="badge badge-success" data-i18n="status_active">نشط</span>
+              </div>
+              <div class="metric-val" id="supKpiActiveInterns">0</div>
+              <div class="metric-title" data-i18n="kpi_active_interns">المتدربون المسندون لإشرافي</div>
+              <div class="metric-sub" id="supKpiActiveInternsSub">تحت الإشراف الأكاديمي المباشر</div>
+            </div>
+
+            <!-- 2. Pending Drafts Queue -->
+            <div class="metric-card" style="border: 1px solid var(--warning);">
+              <div class="metric-card-top">
+                <div class="metric-icon warning"><i class="bx bx-time-five"></i></div>
+                <span class="badge badge-warning" id="supKpiPendingBadge">بانتظار الاعتماد</span>
+              </div>
+              <div class="metric-val" id="supKpiPendingDrafts" style="color:var(--warning);">0</div>
+              <div class="metric-title" data-i18n="kpi_pending_drafts">مسودات سريرية تنتظر المراجعة</div>
+              <div class="metric-sub">تتطلب اعتمادك أو رفضك مع ملاحظات</div>
+            </div>
+
+            <!-- 3. Hours Progress (Verified / Logged) -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <div class="metric-icon info"><i class="bx bx-timer"></i></div>
+                <span class="badge badge-info" id="supKpiHoursPercent">0%</span>
+              </div>
+              <div class="metric-val" id="supKpiHoursTotal">0 / 0</div>
+              <div class="metric-title" data-i18n="kpi_hours_verified">ساعات التدريب الموثقة</div>
+              <div class="metric-sub" id="supKpiHoursSub">ساعة موثقة من إجمالي المسجل</div>
+            </div>
+
+            <!-- 4. Quality & Rejection Rate -->
+            <div class="metric-card" id="supKpiRejectionCard">
+              <div class="metric-card-top">
+                <div class="metric-icon danger"><i class="bx bx-error-alt"></i></div>
+                <span class="badge badge-danger" id="supKpiRejectionBadge">معدل الرفض</span>
+              </div>
+              <div class="metric-val" id="supKpiRejectionCount" style="color:var(--danger);">0</div>
+              <div class="metric-title" data-i18n="kpi_rejected_drafts">مسودات مرفوضة / تنبيهات</div>
+              <div class="metric-sub" id="supKpiRejectionSub">تنبيه لمتابعة أداء المتدربين وتوجيههم</div>
+            </div>
+
+          </div>
+
+          <!-- Alert Banner for Interns with repeated rejections (Alert للـ interns اللي كثر رفض drafts بتوعهم) -->
+          <div class="card-panel" id="supRejectionAlertBanner" style="display:none; margin-bottom: 24px; background: rgba(239, 68, 68, 0.08); border: 1px solid var(--danger); border-radius: var(--radius-md);">
+            <div style="display:flex; align-items:flex-start; gap:16px;">
+              <div style="width:40px; height:40px; border-radius:var(--radius-sm); background:var(--danger-light); color:var(--danger); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+                <i class="bx bxs-error-circle"></i>
+              </div>
+              <div style="flex:1;">
+                <h4 style="font-size:1rem; font-weight:800; color:var(--danger); margin-bottom:4px;" data-i18n="alert_high_rejections_title">
+                  تنبيه أكاديمي: متدربون بحاجة لمتابعة سريرية وتوجيه مكثف
+                </h4>
+                <p style="font-size:0.85rem; color:var(--text-body); line-height:1.5; margin-bottom:8px;" id="supRejectionAlertMsg">
+                  لوحظ تكرار رفض المسودات الطبية لبعض المتدربين. يرجى مراجعة محادثاتهم واستشاراتهم السريرية وأخذ ذلك في الاعتبار عند التقييم الدوري وخصم الدرجات.
+                </p>
+                <div id="supRejectionInternsChips" style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <!-- Injected via app.js -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two-Column Grid: Quick Urgent Queue + Assigned Interns Overview -->
+          <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
+            
+            <!-- Left: Pending Drafts Urgent Queue -->
+            <div class="card-panel">
+              <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="card-header-left">
+                  <div class="card-header-icon warning"><i class="bx bx-bolt-circle"></i></div>
+                  <div>
+                    <h3 class="card-title" data-i18n="urgent_drafts_title">طابور المراجعة العاجلة (مسودات تنتظر القرار)</h3>
+                    <p class="card-subtitle" data-i18n="urgent_drafts_sub">اعتماد المسودة ينفذها على الروشتة/الخطة، والرفض يحفظ الملاحظات للمتدرب</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="App.navigateTo('supervisor-drafts')">
+                  عرض الكل <i class="bx bx-left-arrow-alt"></i>
+                </button>
+              </div>
+
+              <div id="supDashPendingDraftsList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+
+            <!-- Right: My Interns Roster Quick Card -->
+            <div class="card-panel">
+              <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="card-header-left">
+                  <div class="card-header-icon primary"><i class="bx bxs-user-check"></i></div>
+                  <div>
+                    <h3 class="card-title" data-i18n="dash_my_interns_title">المتدربون المسندون لإشرافي</h3>
+                    <p class="card-subtitle" data-i18n="dash_my_interns_sub">نظرة سريعة ومتابعة الساعات والملف الطبي</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="App.navigateTo('supervisor-interns')">
+                  سجل المتدربين <i class="bx bx-left-arrow-alt"></i>
+                </button>
+              </div>
+
+              <div id="supDashInternsList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================
+             SECTION: SUPERVISOR - FULL INTERN CLINICAL DOSSIER (4 TABS)
+             ================================================================ -->
+        <section class="view-section" id="view-supervisor-intern-detail">
+          
+          <!-- Back Navigation Button -->
+          <div class="page-back-nav" style="margin-bottom:16px;">
+            <button class="back-btn" onclick="App.closeSupervisorInternDossier()">
+              <i class="bx bx-right-arrow-alt"></i> العودة لقائمة المتدربين
+            </button>
+          </div>
+
+          <!-- Intern Dossier Header Card -->
+          <div class="intern-profile-hero" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:24px; margin-bottom:20px;">
+            <div class="intern-profile-main" style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
+              <div class="intern-hero-avatar" id="supDossierAvatar" style="width:64px; height:64px; font-size:1.5rem;">مأ</div>
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h2 class="intern-hero-name" id="supDossierName" style="font-size:1.35rem; font-weight:800; color:var(--text-heading); margin:0;">محمد أحمد</h2>
+                  <span class="badge badge-success" id="supDossierStatus">Active</span>
+                </div>
+                <div class="intern-hero-tags" style="display:flex; gap:14px; font-size:0.85rem; color:var(--text-muted); margin-top:6px; flex-wrap:wrap;">
+                  <span><i class="bx bx-envelope"></i> <span id="supDossierEmail">mohamed@example.com</span></span>
+                  <span><i class="bx bx-phone"></i> <span id="supDossierPhone">+2010...</span></span>
+                  <span><i class="bx bxs-graduation"></i> <span id="supDossierFaculty">كلية الصيدلة - جامعة القاهرة</span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="intern-profile-quick-stats" style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+              <div class="hero-stat-box" style="text-align:center; padding:10px 16px; background:var(--bg-card-2); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <span class="hero-stat-val" id="supDossierHoursVal" style="font-size:1.15rem; font-weight:800; color:var(--primary);">0 / 0</span>
+                <span class="hero-stat-sub" style="font-size:0.75rem; color:var(--text-muted); display:block;">ساعات موثقة / مسجلة</span>
+              </div>
+              <div class="hero-stat-box" style="text-align:center; padding:10px 16px; background:var(--bg-card-2); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <span class="hero-stat-val" id="supDossierDraftsCount" style="font-size:1.15rem; font-weight:800; color:var(--text-heading);">0</span>
+                <span class="hero-stat-sub" style="font-size:0.75rem; color:var(--text-muted); display:block;">إجمالي المسودات</span>
+              </div>
+              <button class="btn btn-primary" onclick="App.switchSupervisorDossierTab('evaluation')">
+                <i class="bx bx-award"></i> تسجيل تقييم المتدرب
+              </button>
+            </div>
+          </div>
+
+          <!-- Dossier Tabs Header (4 Tabs) -->
+          <div class="detail-nav-tabs" style="margin-bottom:20px; display:flex; gap:10px; border-bottom:2px solid var(--border-color); padding-bottom:2px;">
+            <button class="detail-tab-btn active" id="supTabBtnDrafts" onclick="App.switchSupervisorDossierTab('drafts')">
+              <i class="bx bx-file-blank"></i> <span>مسودات العمليات السريرية (Drafts)</span>
+              <span class="nav-item-badge" id="supTabDraftsBadge" style="margin-inline-start:6px; display:none;">0</span>
+            </button>
+            <button class="detail-tab-btn" id="supTabBtnChats" onclick="App.switchSupervisorDossierTab('chats')">
+              <i class="bx bx-conversation"></i> <span>المحادثات واستشارات المرضى (Chats)</span>
+            </button>
+            <button class="detail-tab-btn" id="supTabBtnHours" onclick="App.switchSupervisorDossierTab('hours')">
+              <i class="bx bx-time-five"></i> <span>ساعات التدريب وسجل النشاط (Hours)</span>
+            </button>
+            <button class="detail-tab-btn" id="supTabBtnEval" onclick="App.switchSupervisorDossierTab('evaluation')">
+              <i class="bx bx-star"></i> <span>التقييم الأكاديمي والسريري (Evaluation)</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: DRAFTS QUEUE (من clinical-operations) -->
+          <div class="sup-dossier-tab-content active" id="supTabContentDrafts">
+            <div class="card-panel">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                  <h3 class="card-title" style="font-size:1.1rem; font-weight:800; color:var(--text-heading);">مسودات الروشتات وخطط العلاج</h3>
+                  <p class="card-subtitle" style="font-size:0.84rem; color:var(--text-muted);">فحص قرارات المتدرب واعتمادها لتتحول لواقع (Prescription/MedicationPlan) أو رفضها مع توجيه سريري</p>
+                </div>
+                <div class="filter-pills">
+                  <button class="filter-pill active" id="supInternDraftFilterAll" onclick="App.filterInternDrafts('all')">الكل</button>
+                  <button class="filter-pill" id="supInternDraftFilterPending" onclick="App.filterInternDrafts('PendingSupervisorReview')">بانتظار المراجعة</button>
+                  <button class="filter-pill" id="supInternDraftFilterApproved" onclick="App.filterInternDrafts('Approved')">معتمدة</button>
+                  <button class="filter-pill" id="supInternDraftFilterRejected" onclick="App.filterInternDrafts('Rejected')">مرفوضة</button>
+                </div>
+              </div>
+              <div id="supInternDraftsList">
+                <!-- Injected via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: CHATS (استشارات المرضى والـ AI) -->
+          <div class="sup-dossier-tab-content" id="supTabContentChats" style="display:none;">
+            <div class="card-panel" style="padding:0; overflow:hidden;">
+              <div class="chat-observability-container" style="min-height:550px;">
+                <div class="chat-patients-sidebar" id="supInternChatsSidebar" style="border-right:1px solid var(--border-color);">
+                  <div style="padding:14px 16px; border-bottom:1px solid var(--border-color); font-weight:700; font-size:0.9rem; color:var(--text-heading); display:flex; justify-content:space-between; align-items:center;">
+                    <span>المحادثات السريرية</span>
+                    <span class="badge badge-info" id="supChatsCountBadge">0</span>
+                  </div>
+                  <div id="supInternChatsList" style="overflow-y:auto; max-height:490px;">
+                    <!-- Injected via app.js -->
+                  </div>
+                </div>
+                <div class="chat-active-viewer" id="supInternChatViewer">
+                  <!-- Selected conversation viewer injected via app.js -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: HOURS (ساعات التدريب وسجل النشاط والتوثيق) -->
+          <div class="sup-dossier-tab-content" id="supTabContentHours" style="display:none;">
+            <div class="card-panel">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                  <h3 class="card-title" style="font-size:1.1rem; font-weight:800; color:var(--text-heading);">سجل ساعات التدريب الميداني</h3>
+                  <p class="card-subtitle" style="font-size:0.84rem; color:var(--text-muted);">مراجعة الأنشطة الميدانية وتوثيق الساعات المحتسبة للاعتماد</p>
+                </div>
+                <div id="supHoursSummaryPill" class="badge badge-primary" style="font-size:0.88rem; padding:6px 14px;">
+                  <!-- Injected via app.js -->
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>التاريخ</th>
+                      <th>النشاط / القسم</th>
+                      <th>الساعات</th>
+                      <th>حالة التوثيق</th>
+                      <th>الإجراء (توثيق)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="supInternActivityLogsTbody">
+                    <!-- Injected via app.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: EVALUATION (التقييم الأكاديمي والسريري) -->
+          <div class="sup-dossier-tab-content" id="supTabContentEvaluation" style="display:none;">
+            <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px; align-items:start;">
+              
+              <!-- Evaluation Form -->
+              <div class="card-panel">
+                <div class="card-header">
+                  <div class="card-header-left">
+                    <div class="card-header-icon primary"><i class="bx bxs-award"></i></div>
+                    <div>
+                      <h3 class="card-title">تسجيل تقييم سريري جديد للمتدرب</h3>
+                      <p class="card-subtitle">إرسال التقييم المباشر إلى المنظومة الأكاديمية</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Academic Penalty Warning Banner -->
+                <div style="margin-top:14px; margin-bottom:18px; padding:12px 16px; background:rgba(245, 158, 11, 0.1); border:1px solid var(--warning); border-radius:var(--radius-sm); font-size:0.85rem; line-height:1.5; color:var(--text-body);">
+                  <strong style="color:var(--warning-text, var(--warning));"><i class="bx bx-error"></i> قاعدة التقييم:</strong>
+                  يُراعى خصم درجات في حال تكرار رفض المسودات الطبية أو وجود أخطاء في الجرعات والتفاعلات الدوائية أثناء الاستشارات.
+                </div>
+
+                <form id="supDossierEvalForm" onsubmit="App.submitSupervisorDossierEvaluation(event)" style="display:flex; flex-direction:column; gap:18px;">
+                  <input type="hidden" id="supDossierEvalAssignmentId">
+
+                  <!-- 1. Clinical Knowledge -->
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                      <label style="font-weight:700; font-size:0.88rem; color:var(--text-heading);">المعرفة السريرية وعلم الأدوية (Clinical Knowledge)</label>
+                      <span id="supScoreValKnowledge" style="font-weight:800; color:var(--primary);">4 / 5</span>
+                    </div>
+                    <input type="range" id="supScoreInputKnowledge" min="1" max="5" value="4" step="1" class="form-range" style="width:100%;" oninput="App.updateEvalScorePreview()">
+                  </div>
+
+                  <!-- 2. Patient Communication -->
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                      <label style="font-weight:700; font-size:0.88rem; color:var(--text-heading);">مهارات التواصل مع المرضى (Communication Skills)</label>
+                      <span id="supScoreValComm" style="font-weight:800; color:var(--primary);">4 / 5</span>
+                    </div>
+                    <input type="range" id="supScoreInputComm" min="1" max="5" value="4" step="1" class="form-range" style="width:100%;" oninput="App.updateEvalScorePreview()">
+                  </div>
+
+                  <!-- 3. Ethics & Discipline -->
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                      <label style="font-weight:700; font-size:0.88rem; color:var(--text-heading);">الأخلاقيات المهنية والانضباط (Ethics & Discipline)</label>
+                      <span id="supScoreValEthics" style="font-weight:800; color:var(--primary);">5 / 5</span>
+                    </div>
+                    <input type="range" id="supScoreInputEthics" min="1" max="5" value="5" step="1" class="form-range" style="width:100%;" oninput="App.updateEvalScorePreview()">
+                  </div>
+
+                  <!-- Calculated Overall Score Preview -->
+                  <div style="background:var(--bg-card-2); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                      <span style="font-weight:700; font-size:0.9rem; color:var(--text-heading);">الدرجة التقديرية الإجمالية (Overall Score)</span>
+                      <span id="supScoreFormulaNote" style="font-size:0.75rem; color:var(--text-muted); display:block;">محسوبة بناءً على المعايير ونسبة قبول المسودات</span>
+                    </div>
+                    <div style="font-size:1.4rem; font-weight:800; color:var(--primary);" id="supScoreCalculatedOverall">88%</div>
+                  </div>
+
+                  <!-- Comments -->
+                  <div>
+                    <label style="display:block; font-weight:700; font-size:0.88rem; color:var(--text-heading); margin-bottom:6px;">
+                      ملاحظات وتوجيهات المشرف (Comments)
+                    </label>
+                    <textarea id="supDossierEvalComments" rows="3" class="form-input" style="width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main);" placeholder="أدخل توجيهاتك للمتدرب ونقاط القوة والتحسين..." required></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary" id="btnSubmitDossierEval" style="padding:10px 20px; font-weight:700;">
+                    <i class="bx bx-check"></i> اعتماد وإرسال التقييم
+                  </button>
+                </form>
+              </div>
+
+              <!-- Intern Performance & Rejection Summary Box -->
+              <div class="card-panel">
+                <div class="card-header">
+                  <div class="card-header-left">
+                    <div class="card-header-icon info"><i class="bx bx-pie-chart-alt"></i></div>
+                    <div>
+                      <h3 class="card-title">مؤشرات أداء المتدرب السريري</h3>
+                      <p class="card-subtitle">إحصائيات المسودات والاعتمادات</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="supInternPerformanceSummary" style="margin-top:14px;">
+                  <!-- Injected via app.js -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </section>
 
         <!-- ================================================================

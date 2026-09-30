@@ -244,30 +244,40 @@ const App = {
   handleRoute() {
     let hash = window.location.hash.replace('#', '');
     if (!hash) {
-      hash = this.userRole === 'supervisor' ? 'supervisor-interns' : 'dashboard';
+      hash = this.userRole === 'supervisor' ? 'supervisor-dashboard' : 'dashboard';
     }
 
     if (this.userRole === 'supervisor' && ['dashboard', 'interns', 'unassigned', 'supervisors', 'settings'].includes(hash)) {
-      hash = 'supervisor-interns';
+      hash = 'supervisor-dashboard';
     }
 
-    if (hash.startsWith('intern/')) {
+    if (hash.startsWith('supervisor-intern/')) {
+      const internUserId = hash.replace('supervisor-intern/', '');
+      this.openSupervisorInternDossier(internUserId, false);
+    } else if (hash.startsWith('intern/')) {
       const internId = hash.replace('intern/', '');
-      this.openInternProfile(internId, false);
+      if (this.userRole === 'supervisor') {
+        this.openSupervisorInternDossier(internId, false);
+      } else {
+        this.openInternProfile(internId, false);
+      }
     } else {
       this.navigateTo(hash, false);
     }
   },
 
   navigateTo(viewId, updateHash = true) {
-    if (this.currentView !== 'intern-detail' && viewId === 'intern-detail') {
+    const isSpecialDetail = viewId === 'intern-detail' || viewId === 'supervisor-intern-detail';
+    const isCurrentSpecialDetail = this.currentView === 'intern-detail' || this.currentView === 'supervisor-intern-detail';
+
+    if (!isCurrentSpecialDetail && isSpecialDetail) {
       this.previousView = this.currentView;
-    } else if (viewId !== 'intern-detail') {
+    } else if (!isSpecialDetail) {
       this.previousView = viewId;
     }
 
     this.currentView = viewId;
-    if (updateHash && viewId !== 'intern-detail') {
+    if (updateHash && !isSpecialDetail) {
       window.location.hash = viewId;
     }
 
@@ -300,6 +310,8 @@ const App = {
       } else {
         this.renderDeanProfile();
       }
+    } else if (viewId === 'supervisor-dashboard') {
+      this.renderSupervisorDashboard();
     } else if (viewId === 'supervisor-interns') {
       this.renderSupervisorInterns();
     } else if (viewId === 'supervisor-drafts') {
@@ -310,7 +322,7 @@ const App = {
   },
 
   navigateBack() {
-    const fallback = this.userRole === 'supervisor' ? 'supervisor-interns' : 'dashboard';
+    const fallback = this.userRole === 'supervisor' ? 'supervisor-dashboard' : 'dashboard';
     this.navigateTo(this.previousView || fallback);
   },
 
@@ -326,8 +338,10 @@ const App = {
         interns: { title: 'Interns Directory', sub: '' },
         unassigned: { title: 'Unassigned Placement Queue', sub: '' },
         supervisors: { title: 'Academic Supervisors Directory', sub: '' },
+        'supervisor-dashboard': { title: 'Supervisor Dashboard', sub: 'Clinical review and intern oversight observatory' },
         'supervisor-interns': { title: 'My Interns', sub: 'Interns assigned under your academic supervision' },
         'supervisor-drafts': { title: 'Clinical Drafts Review', sub: 'Review and approve intern clinical drafts' },
+        'supervisor-intern-detail': { title: 'Intern Clinical Dossier', sub: 'Clinical drafts, patient chats, training hours, and competency evaluation' },
         'intern-detail': { title: 'Student Clinical Dossier', sub: '' },
         profile: { title: this.userRole === 'supervisor' ? 'Supervisor Profile' : 'Dean Profile', sub: '' },
         settings: { title: 'Faculty Settings', sub: '' },
@@ -337,8 +351,10 @@ const App = {
         interns: { title: 'سجل المتدربين', sub: '' },
         unassigned: { title: 'قائمة انتظار التسكين', sub: '' },
         supervisors: { title: 'المشرفون الأكاديميون', sub: '' },
-        'supervisor-interns': { title: 'المتدربون التابعون لي', sub: 'المتدربون الموزعون تحت إشرافي الأكاديمي' },
+        'supervisor-dashboard': { title: 'لوحة المشرف الأكاديمي', sub: 'مرصد متابعة المتدربين واعتماد القرارات السريرية' },
+        'supervisor-interns': { title: 'المتدربون التابعون لي', sub: 'المتدربون الموزعون تحت إشرافي الأكاديمي المباشر' },
         'supervisor-drafts': { title: 'مراجعة المسودات الطبية', sub: 'فحص واعتماد مسودات وتوصيات المتدربين السريرية' },
+        'supervisor-intern-detail': { title: 'الملف السريري للمتدرب', sub: 'المسودات السريرية، استشارات المرضى والشات، وساعات التدريب' },
         'intern-detail': { title: 'الملف الطبي للمتدرب', sub: '' },
         profile: { title: this.userRole === 'supervisor' ? 'الملف الشخصي للمشرف' : 'الملف الشخصي للعميد', sub: '' },
         settings: { title: 'ملف الكلية', sub: '' },
@@ -357,6 +373,7 @@ const App = {
     if (this.userRole === 'supervisor') {
       this.renderSupervisorProfile();
       await Promise.all([
+        this.renderSupervisorDashboard(),
         this.renderSupervisorInterns(),
         this.renderSupervisorDrafts('PendingSupervisorReview')
       ]);
@@ -1574,7 +1591,197 @@ const App = {
     });
   },
 
-  // --- Supervisor Workspace Methods (Part 5 & 7 API Guide) ---
+  // ====================================================================
+  // SUPERVISOR WORKSPACE SUITE (Dashboard, Interns, Dossier, Drafts, Chats, Hours, Eval)
+  // ====================================================================
+
+  supervisorInternsCache: [],
+  supervisorDraftsCache: [],
+  currentSupervisorInternUserId: null,
+  currentInternDrafts: [],
+  currentInternChats: [],
+  currentSelectedChatId: null,
+  currentInternActivityLogs: [],
+  currentSupervisorDraftFilter: 'PendingSupervisorReview',
+
+  // --- 1. Supervisor Dashboard & KPI Overview ---
+  async renderSupervisorDashboard() {
+    const kpiActive = document.getElementById('supKpiActiveInterns');
+    const kpiPending = document.getElementById('supKpiPendingDrafts');
+    const kpiHours = document.getElementById('supKpiHoursTotal');
+    const kpiHoursPct = document.getElementById('supKpiHoursPercent');
+    const kpiRejection = document.getElementById('supKpiRejectionCount');
+    const dashDraftsList = document.getElementById('supDashPendingDraftsList');
+    const dashInternsList = document.getElementById('supDashInternsList');
+
+    if (dashDraftsList) {
+      dashDraftsList.innerHTML = `
+        <div style="text-align:center; padding:24px; color:var(--text-muted);">
+          <i class="bx bx-loader-alt bx-spin" style="font-size:24px; display:block; margin-bottom:8px;"></i>
+          جاري تحميل بيانات المؤشرات والمسودات...
+        </div>
+      `;
+    }
+
+    try {
+      const [interns, drafts] = await Promise.all([
+        DeanApiService.getSupervisorMyInterns(),
+        DeanApiService.getSupervisorDrafts({ pageSize: 50 })
+      ]);
+
+      this.supervisorInternsCache = Array.isArray(interns) ? interns : [];
+      const draftsList = Array.isArray(drafts) ? drafts : (drafts && drafts.items ? drafts.items : []);
+      this.supervisorDraftsCache = draftsList;
+
+      // Update Sidebar Badges
+      const internBadge = document.getElementById('sidebarSupInternsCount');
+      if (internBadge) {
+        internBadge.textContent = this.supervisorInternsCache.length;
+        internBadge.style.display = this.supervisorInternsCache.length > 0 ? 'inline-block' : 'none';
+      }
+
+      // Calculations
+      const activeInternsCount = this.supervisorInternsCache.filter(i => (i.status || 'Active') === 'Active').length;
+      const pendingDrafts = draftsList.filter(d => (d.status || '').includes('Pending') || d.status === 'PendingSupervisorReview');
+      const rejectedDrafts = draftsList.filter(d => (d.status || '').includes('Reject'));
+
+      const draftBadge = document.getElementById('sidebarSupDraftsCount');
+      if (draftBadge) {
+        draftBadge.textContent = pendingDrafts.length;
+        draftBadge.style.display = pendingDrafts.length > 0 ? 'inline-block' : 'none';
+      }
+
+      let totalLogged = 0;
+      let totalVerified = 0;
+      this.supervisorInternsCache.forEach(i => {
+        totalLogged += (i.loggedHours || 0);
+        totalVerified += (i.verifiedHours || 0);
+      });
+      const hoursPct = totalLogged > 0 ? Math.min(100, Math.round((totalVerified / totalLogged) * 100)) : 0;
+
+      // Update KPI widgets
+      if (kpiActive) kpiActive.textContent = activeInternsCount;
+      if (kpiPending) kpiPending.textContent = pendingDrafts.length;
+      if (kpiHours) kpiHours.textContent = `${totalVerified} / ${totalLogged}`;
+      if (kpiHoursPct) kpiHoursPct.textContent = `${hoursPct}%`;
+      if (kpiRejection) kpiRejection.textContent = rejectedDrafts.length;
+
+      // Check Rejections per intern for Alert (Alert للـ interns اللي كثر رفض drafts بتوعهم)
+      const internRejectionMap = {};
+      rejectedDrafts.forEach(d => {
+        const id = d.internUserId || d.internId || 'unknown';
+        const name = d.internName || 'متدرب';
+        if (!internRejectionMap[id]) internRejectionMap[id] = { count: 0, name, id };
+        internRejectionMap[id].count++;
+      });
+
+      const highRejectionInterns = Object.values(internRejectionMap).filter(item => item.count >= 2);
+      const alertBanner = document.getElementById('supRejectionAlertBanner');
+      const alertChips = document.getElementById('supRejectionInternsChips');
+      if (alertBanner && alertChips) {
+        if (highRejectionInterns.length > 0) {
+          alertBanner.style.display = 'block';
+          alertChips.innerHTML = highRejectionInterns.map(h => `
+            <div style="background:var(--bg-card); padding:8px 14px; border-radius:var(--radius-sm); border:1px solid var(--danger); display:flex; align-items:center; gap:10px;">
+              <span style="font-weight:700; font-size:0.88rem; color:var(--text-heading);">${h.name}</span>
+              <span class="badge badge-danger" style="font-size:0.75rem;">${h.count} مسودات مرفوضة</span>
+              <button class="btn btn-outline" style="padding:3px 10px; font-size:0.75rem;" onclick="App.openSupervisorInternDossier('${h.id}')">
+                فحص وتوجيه سريري <i class="bx bx-left-arrow-alt"></i>
+              </button>
+            </div>
+          `).join('');
+        } else {
+          alertBanner.style.display = 'none';
+        }
+      }
+
+      // Render Urgent Pending Drafts Queue in Dashboard
+      if (dashDraftsList) {
+        if (pendingDrafts.length === 0) {
+          dashDraftsList.innerHTML = `
+            <div style="text-align:center; padding:36px 16px; color:var(--text-muted);">
+              <i class="bx bx-check-shield" style="font-size:40px; color:var(--success); margin-bottom:8px; display:block;"></i>
+              <p style="font-weight:700; margin-bottom:4px; color:var(--text-heading);">طابور المراجعة فارغ</p>
+              <span style="font-size:0.82rem;">تمت مراجعة واعتماد جميع مسودات المتدربين السريرية.</span>
+            </div>
+          `;
+        } else {
+          dashDraftsList.innerHTML = pendingDrafts.slice(0, 4).map(d => {
+            const draftId = d.draftId || d.id;
+            const internName = d.internName || 'متدرب';
+            const kind = d.entityKind === 'PrescriptionReview' ? '💊 فحص روشتة' : (d.entityKind === 'MedicationPlan' ? '📋 خطة علاج' : 'توصية سريرية');
+            const notes = d.internClinicalNotes || d.notes || d.recommendation || 'لا توجد ملاحظات إضافية';
+            const date = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '';
+
+            return `
+              <div style="padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-card); display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge badge-primary">${kind}</span>
+                    <span style="font-weight:700; font-size:0.92rem; color:var(--text-heading);">${internName}</span>
+                  </div>
+                  <span style="font-size:0.78rem; color:var(--text-muted);">${date}</span>
+                </div>
+                <div style="font-size:0.84rem; line-height:1.45; color:var(--text-body); background:var(--bg-canvas); padding:10px 12px; border-radius:var(--radius-sm);">
+                  ${notes}
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
+                  <button class="btn btn-primary" style="padding:5px 14px; font-size:0.82rem;" onclick="App.approveSupervisorDraft('${draftId}')">
+                    <i class="bx bx-check"></i> اعتماد
+                  </button>
+                  <button class="btn btn-outline-danger" style="padding:5px 14px; font-size:0.82rem;" onclick="App.openRejectDraftModal('${draftId}')">
+                    <i class="bx bx-x"></i> رفض مع ملاحظات
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // Render Dashboard Interns Roster
+      if (dashInternsList) {
+        if (this.supervisorInternsCache.length === 0) {
+          dashInternsList.innerHTML = `
+            <div style="text-align:center; padding:36px 16px; color:var(--text-muted);">
+              <i class="bx bx-user-x" style="font-size:36px; opacity:0.4; margin-bottom:8px; display:block;"></i>
+              <p style="font-weight:700;">لا يوجد متدربون مسندون حالياً</p>
+              <span style="font-size:0.8rem;">سيظهر المتدربون هنا بمجرد تسكينهم من قبل عميد الكلية.</span>
+            </div>
+          `;
+        } else {
+          dashInternsList.innerHTML = this.supervisorInternsCache.slice(0, 5).map(i => {
+            const internUserId = i.internUserId || i.userId || i.id;
+            const name = i.internName || 'متدرب';
+            const initial = (name || 'I').trim().charAt(0).toUpperCase();
+            const logged = i.loggedHours || 0;
+            const verified = i.verifiedHours || 0;
+            const pct = logged > 0 ? Math.min(100, Math.round((verified / logged) * 100)) : 0;
+
+            return `
+              <div style="padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-card); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div class="avatar-sm">${initial}</div>
+                  <div>
+                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-heading);">${name}</div>
+                    <div style="font-size:0.76rem; color:var(--text-muted);">${verified} / ${logged} ساعة موثقة (${pct}%)</div>
+                  </div>
+                </div>
+                <button class="btn btn-outline" style="padding:5px 12px; font-size:0.8rem;" onclick="App.openSupervisorInternDossier('${internUserId}')">
+                  الملف والمسودات <i class="bx bx-left-arrow-alt"></i>
+                </button>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+    } catch (err) {
+      console.error('[renderSupervisorDashboard] Error:', err);
+    }
+  },
+
+  // --- 2. Supervisor Interns Directory Table ---
   async renderSupervisorInterns() {
     const tbody = document.getElementById('supInternsTableBody');
     if (!tbody) return;
@@ -1590,10 +1797,12 @@ const App = {
 
     try {
       const interns = await DeanApiService.getSupervisorMyInterns();
+      this.supervisorInternsCache = Array.isArray(interns) ? interns : [];
+
       const badge = document.getElementById('sidebarSupInternsCount');
       if (badge) {
-        badge.textContent = Array.isArray(interns) ? interns.length : 0;
-        badge.style.display = (Array.isArray(interns) && interns.length > 0) ? 'inline-block' : 'none';
+        badge.textContent = this.supervisorInternsCache.length;
+        badge.style.display = this.supervisorInternsCache.length > 0 ? 'inline-block' : 'none';
       }
 
       if (!interns || interns.length === 0) {
@@ -1617,6 +1826,7 @@ const App = {
       }
 
       tbody.innerHTML = interns.map(item => {
+        const internUserId = item.internUserId || item.userId || item.id;
         const name = item.internName || 'متدرب';
         const email = item.internEmail || '';
         const phone = item.internPhone || '';
@@ -1629,6 +1839,7 @@ const App = {
         const startDate = item.startDate ? new Date(item.startDate).toLocaleDateString() : '—';
         const endDate = item.expectedEndDate ? new Date(item.expectedEndDate).toLocaleDateString() : '—';
         const initial = (name || 'I').trim().charAt(0).toUpperCase();
+        const pct = logged > 0 ? Math.min(100, Math.round((verified / logged) * 100)) : 0;
 
         return `
           <tr>
@@ -1646,8 +1857,10 @@ const App = {
               <div style="font-size:0.78rem; color:var(--text-muted);">${uni || ''}</div>
             </td>
             <td>
-              <div style="font-weight:700; font-size:0.9rem; color:var(--primary);">${verified} / ${logged} ساعة</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">معتمدة من إجمالي المسجل</div>
+              <div style="font-weight:700; font-size:0.88rem; color:var(--primary);">${verified} / ${logged} ساعة (${pct}%)</div>
+              <div class="eval-score-track" style="height:6px; margin-top:4px; max-width:140px;">
+                <div class="eval-score-fill" style="width:${pct}%;"></div>
+              </div>
             </td>
             <td>
               <div style="font-size:0.82rem;">${startDate} - ${endDate}</div>
@@ -1657,8 +1870,11 @@ const App = {
             </td>
             <td>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="btn btn-outline" style="padding:5px 10px; font-size:0.8rem;" onclick="App.openSupervisorEvaluationModal('${assignmentId}', '${name.replace(/'/g, "\\'")}')">
-                  <i class="bx bx-award"></i> تقييم دوري
+                <button class="btn btn-primary" style="padding:6px 12px; font-size:0.82rem; font-weight:700;" onclick="App.openSupervisorInternDossier('${internUserId}')">
+                  <i class="bx bx-folder-open"></i> الملف والمسودات
+                </button>
+                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.8rem;" onclick="App.openSupervisorEvaluationModal('${assignmentId}', '${name.replace(/'/g, "\\'")}')">
+                  <i class="bx bx-award"></i> تقييم
                 </button>
               </div>
             </td>
@@ -1678,6 +1894,661 @@ const App = {
     }
   },
 
+  // --- 3. Supervisor Intern Dossier (Open & Tabs Navigation) ---
+  async openSupervisorInternDossier(internUserId, updateHash = true) {
+    if (!internUserId) return;
+    this.currentSupervisorInternUserId = internUserId;
+
+    // Find intern from cache or fetch
+    let intern = (this.supervisorInternsCache || []).find(i => (i.internUserId === internUserId || i.id === internUserId || i.userId === internUserId));
+    if (!intern) {
+      const allInterns = await DeanApiService.getSupervisorMyInterns();
+      this.supervisorInternsCache = Array.isArray(allInterns) ? allInterns : [];
+      intern = this.supervisorInternsCache.find(i => (i.internUserId === internUserId || i.id === internUserId || i.userId === internUserId));
+    }
+
+    if (!intern) {
+      this.showToast('تعذر العثور على بيانات المتدرب المطلوب', 'warning');
+      return;
+    }
+
+    // Populate Dossier Header
+    const nameEl = document.getElementById('supDossierName');
+    const avatarEl = document.getElementById('supDossierAvatar');
+    const statusEl = document.getElementById('supDossierStatus');
+    const emailEl = document.getElementById('supDossierEmail');
+    const phoneEl = document.getElementById('supDossierPhone');
+    const facultyEl = document.getElementById('supDossierFaculty');
+    const hoursValEl = document.getElementById('supDossierHoursVal');
+    const evalAssignIdEl = document.getElementById('supDossierEvalAssignmentId');
+
+    const name = intern.internName || 'متدرب';
+    if (nameEl) nameEl.textContent = name;
+    if (avatarEl) avatarEl.textContent = (name.charAt(0) || 'I').toUpperCase();
+    if (statusEl) statusEl.textContent = intern.status || 'Active';
+    if (emailEl) emailEl.textContent = intern.internEmail || '—';
+    if (phoneEl) phoneEl.textContent = intern.internPhone || '—';
+    if (facultyEl) facultyEl.textContent = `${intern.facultyName || 'كلية الصيدلة'} — ${intern.universityName || ''}`;
+    if (hoursValEl) hoursValEl.textContent = `${intern.verifiedHours || 0} / ${intern.loggedHours || 0}`;
+    if (evalAssignIdEl) evalAssignIdEl.value = intern.assignmentId || '';
+
+    // Switch view
+    this.navigateTo('supervisor-intern-detail', false);
+    if (updateHash) {
+      window.location.hash = `supervisor-intern/${internUserId}`;
+    }
+
+    // Switch to Tab 1 (Drafts) by default
+    this.switchSupervisorDossierTab('drafts');
+  },
+
+  closeSupervisorInternDossier() {
+    this.navigateTo('supervisor-interns');
+  },
+
+  switchSupervisorDossierTab(tabKey) {
+    const tabs = ['drafts', 'chats', 'hours', 'evaluation'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`supTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+      const pane = document.getElementById(`supTabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+      if (btn) btn.classList.toggle('active', t === tabKey);
+      if (pane) {
+        pane.style.display = t === tabKey ? 'block' : 'none';
+        pane.classList.toggle('active', t === tabKey);
+      }
+    });
+
+    const internUserId = this.currentSupervisorInternUserId;
+    if (!internUserId) return;
+
+    if (tabKey === 'drafts') {
+      this.renderSupervisorInternDrafts(internUserId);
+    } else if (tabKey === 'chats') {
+      this.renderSupervisorInternChats(internUserId);
+    } else if (tabKey === 'hours') {
+      this.renderSupervisorInternHours(internUserId);
+    } else if (tabKey === 'evaluation') {
+      this.renderSupervisorInternEvaluation(internUserId);
+    }
+  },
+
+  // --- 4. Dossier Tab 1: Drafts Queue (GET /supervisor/interns/{id}/clinical-operations) ---
+  currentInternDraftFilter: 'all',
+
+  filterInternDrafts(filter) {
+    this.currentInternDraftFilter = filter;
+    ['all', 'PendingSupervisorReview', 'Approved', 'Rejected'].forEach(f => {
+      const el = document.getElementById(`supInternDraftFilter${f}`);
+      if (el) el.classList.toggle('active', f === filter);
+    });
+    this.renderSupervisorInternDrafts(this.currentSupervisorInternUserId, filter);
+  },
+
+  async renderSupervisorInternDrafts(internUserId, filter = null) {
+    if (!filter) filter = this.currentInternDraftFilter;
+    const container = document.getElementById('supInternDraftsList');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div style="text-align:center; padding:32px; color:var(--text-muted);">
+        <i class="bx bx-loader-alt bx-spin" style="font-size:28px; margin-bottom:8px; display:block;"></i>
+        جاري تحميل مسودات العمليات السريرية للمتدرب...
+      </div>
+    `;
+
+    try {
+      const drafts = await DeanApiService.getSupervisorInternClinicalOperations(internUserId);
+      this.currentInternDrafts = Array.isArray(drafts) ? drafts : [];
+
+      // Update counters
+      const draftsBadge = document.getElementById('supTabDraftsBadge');
+      const draftsCountHeader = document.getElementById('supDossierDraftsCount');
+      if (draftsCountHeader) draftsCountHeader.textContent = this.currentInternDrafts.length;
+
+      const pendingCount = this.currentInternDrafts.filter(d => (d.status || '').includes('Pending')).length;
+      if (draftsBadge) {
+        draftsBadge.textContent = pendingCount;
+        draftsBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+      }
+
+      let filtered = this.currentInternDrafts;
+      if (filter && filter !== 'all') {
+        filtered = filtered.filter(d => (d.status || '') === filter || (d.status || '').includes(filter));
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:48px 24px; color:var(--text-muted);">
+            <i class="bx bx-file-blank" style="font-size:44px; opacity:0.35; margin-bottom:12px; display:block;"></i>
+            <h4 style="font-weight:700; margin-bottom:4px;">لا توجد مسودات في هذا الفلتر</h4>
+            <span style="font-size:0.85rem;">المسودات السريرية التي يرسلها المتدرب تظهر هنا للاعتماد أو الرفض.</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(d => {
+        const draftId = d.draftId || d.id;
+        const kindLabel = d.entityKind === 'PrescriptionReview' 
+          ? '💊 فحص روشتة طبية (PrescriptionReview)' 
+          : (d.entityKind === 'MedicationPlan' ? '📋 خطة علاج دوائية (MedicationPlan)' : (d.entityKind || 'مسودة سريرية'));
+        const status = d.status || 'PendingSupervisorReview';
+        const date = d.createdAt ? new Date(d.createdAt).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const notes = d.internClinicalNotes || d.notes || d.recommendation || 'لا توجد ملاحظات سريرية من المتدرب.';
+        const targetId = d.targetEntityId || '—';
+
+        let badgeHtml = '';
+        if (status.includes('Approve') || status.includes('Accept')) {
+          badgeHtml = `<span class="badge badge-success"><i class="bx bx-check"></i> معتمدة ومطبقة في المنظومة</span>`;
+        } else if (status.includes('Reject')) {
+          badgeHtml = `<span class="badge badge-danger"><i class="bx bx-x"></i> مسودة مرفوضة</span>`;
+        } else {
+          badgeHtml = `<span class="badge badge-warning" style="animation: pulse 2s infinite;"><i class="bx bx-time"></i> بانتظار اعتماد المشرف</span>`;
+        }
+
+        const isPending = status.includes('Pending');
+
+        return `
+          <div class="audit-card-item" style="padding:18px; margin-bottom:14px; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-card); display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                  <span style="font-weight:800; font-size:1rem; color:var(--text-heading);">${kindLabel}</span>
+                  ${badgeHtml}
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">
+                  تاريخ الإرسال: ${date} • معرّف الكيان الأصلي: <code style="font-size:0.75rem; color:var(--primary);">${targetId}</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes from Intern -->
+            <div style="background:var(--bg-canvas); padding:12px 14px; border-radius:var(--radius-sm); border-right:3px solid var(--primary); font-size:0.88rem; line-height:1.55; color:var(--text-body);">
+              <strong style="color:var(--text-heading); display:block; margin-bottom:4px;"><i class="bx bx-note"></i> ملاحظات وقرار المتدرب السريري:</strong>
+              ${notes}
+            </div>
+
+            ${isPending ? `
+              <!-- Decision Box with Feedback Textbox -->
+              <div style="margin-top:4px; background:var(--bg-card-2); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:var(--text-heading); margin-bottom:6px;">
+                  <i class="bx bx-comment-edit"></i> ملاحظات وتوجيه المشرف السريري (Feedback):
+                </label>
+                <textarea id="supDraftFeedback_${draftId}" class="form-input" rows="2" style="width:100%; padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-size:0.85rem;" placeholder="أدخل التوجيه أو التعديل المطلوب على الجرعات أو سبب الرفض/الاعتماد..."></textarea>
+                
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                  <button class="btn btn-outline-danger" style="padding:6px 16px; font-size:0.85rem; font-weight:700;" onclick="App.rejectSupervisorDraftFromDossier('${draftId}', '${internUserId}')">
+                    <i class="bx bx-x"></i> رفض المسودة (Reject)
+                  </button>
+                  <button class="btn btn-primary" style="padding:6px 18px; font-size:0.85rem; font-weight:700;" onclick="App.approveSupervisorDraftFromDossier('${draftId}', '${internUserId}')">
+                    <i class="bx bx-check"></i> اعتماد المسودة (Approve)
+                  </button>
+                </div>
+              </div>
+            ` : `
+              <!-- Display Past Supervisor Feedback -->
+              ${d.supervisorFeedback ? `
+                <div style="background:var(--bg-card-2); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); font-size:0.84rem;">
+                  <strong style="color:var(--text-heading);"><i class="bx bx-check-shield"></i> ملاحظات وتوجيه المشرف:</strong>
+                  <p style="margin-top:4px; color:var(--text-body); line-height:1.4;">${d.supervisorFeedback}</p>
+                  ${d.reviewedAt ? `<span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:4px;">تمت المراجعة: ${new Date(d.reviewedAt).toLocaleString('ar-EG')}</span>` : ''}
+                </div>
+              ` : ''}
+            `}
+          </div>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error('[renderSupervisorInternDrafts] Error:', err);
+      container.innerHTML = `
+        <div style="text-align:center; padding:32px; color:var(--danger);">
+          <i class="bx bx-error-circle" style="font-size:28px; margin-bottom:8px; display:block;"></i>
+          حدث خطأ أثناء تحميل المسودات: ${err.message || 'تعذر الاتصال'}
+        </div>
+      `;
+    }
+  },
+
+  // --- Inline Approve / Reject from Dossier ---
+  async approveSupervisorDraftFromDossier(draftId, internUserId) {
+    const feedbackInput = document.getElementById(`supDraftFeedback_${draftId}`);
+    const feedback = feedbackInput ? feedbackInput.value.trim() : '';
+
+    try {
+      this.showToast('جاري اعتماد المسودة وتطبيقها بالمنظومة...', 'info');
+      const res = await DeanApiService.approveSupervisorDraft(draftId, 'Approve', feedback || 'تم الاعتماد السريري من قبل المشرف الأكاديمي');
+      if (res && res.success !== false) {
+        this.showToast('تم اعتماد المسودة بنجاح! تحولت إلى واقع سريري معتمد ✅', 'success');
+        this.renderSupervisorInternDrafts(internUserId);
+        this.renderSupervisorDashboard();
+      } else {
+        this.showToast((res && res.message) || 'تعذر اعتماد المسودة', 'error');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'تعذر اعتماد المسودة', 'error');
+    }
+  },
+
+  async rejectSupervisorDraftFromDossier(draftId, internUserId) {
+    const feedbackInput = document.getElementById(`supDraftFeedback_${draftId}`);
+    const feedback = feedbackInput ? feedbackInput.value.trim() : '';
+
+    if (!feedback) {
+      this.showToast('يرجى كتابة ملاحظات وتوجيهات المشرف لتوضيح سبب الرفض للمتدرب.', 'warning');
+      if (feedbackInput) feedbackInput.focus();
+      return;
+    }
+
+    try {
+      this.showToast('جاري إرسال الرفض والملاحظات للمتدرب...', 'info');
+      const res = await DeanApiService.approveSupervisorDraft(draftId, 'Reject', feedback);
+      if (res && res.success !== false) {
+        this.showToast('تم رفض المسودة وإرسال التوجيهات للمتدرب لإعادة الصياغة بنجاح', 'success');
+        this.renderSupervisorInternDrafts(internUserId);
+        this.renderSupervisorDashboard();
+      } else {
+        this.showToast((res && res.message) || 'تعذر رفض المسودة', 'error');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'تعذر رفض المسودة', 'error');
+    }
+  },
+
+  // --- 5. Dossier Tab 2: Chats (GET /supervisor/interns/{id}/chats) ---
+  async renderSupervisorInternChats(internUserId) {
+    const listEl = document.getElementById('supInternChatsList');
+    const viewerEl = document.getElementById('supInternChatViewer');
+    const badgeEl = document.getElementById('supChatsCountBadge');
+
+    if (listEl) {
+      listEl.innerHTML = `
+        <div style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+          <i class="bx bx-loader-alt bx-spin" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+          جاري تحميل المحادثات السريرية...
+        </div>
+      `;
+    }
+
+    try {
+      const chats = await DeanApiService.getSupervisorInternChats(internUserId);
+      this.currentInternChats = Array.isArray(chats) ? chats : [];
+
+      if (badgeEl) badgeEl.textContent = this.currentInternChats.length;
+
+      if (this.currentInternChats.length === 0) {
+        if (listEl) {
+          listEl.innerHTML = `
+            <div style="text-align:center; padding:36px 16px; color:var(--text-muted);">
+              <i class="bx bx-chat" style="font-size:36px; opacity:0.35; margin-bottom:8px; display:block;"></i>
+              <p style="font-weight:700;">لا توجد محادثات مسجلة</p>
+              <span style="font-size:0.8rem;">استشارات المرضى وجلسات المساعد الذكي ستظهر هنا.</span>
+            </div>
+          `;
+        }
+        if (viewerEl) {
+          viewerEl.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:350px; color:var(--text-muted);">
+              <i class="bx bx-conversation" style="font-size:48px; opacity:0.3; margin-bottom:12px;"></i>
+              <h4 style="font-weight:700; margin-bottom:4px;">مرصد المحادثات والاستشارات</h4>
+              <p style="font-size:0.85rem; max-width:400px; text-align:center;">اختر محادثة من القائمة لمراقبة جودة التواصل الطبي، التحقق من الجرعات، وتوجيه المتدرب.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      // Render conversation list
+      if (listEl) {
+        listEl.innerHTML = this.currentInternChats.map((c, idx) => {
+          const name = c.otherPartyName || 'مريض / مستفيد';
+          const role = c.otherPartyRole || 'Patient';
+          const roleBadge = role.toLowerCase().includes('ai') ? '<span class="badge badge-info" style="font-size:0.7rem;">🤖 AI</span>' : '<span class="badge badge-primary" style="font-size:0.7rem;">👤 مريض</span>';
+          const count = c.messageCount || (c.recentMessages ? c.recentMessages.length : 0);
+          const date = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString() : '';
+          const activeClass = idx === 0 ? 'active' : '';
+
+          return `
+            <div class="chat-patient-item ${activeClass}" id="supChatItem_${c.conversationId}" onclick="App.selectSupervisorChat('${c.conversationId}')" style="padding:12px 14px; border-bottom:1px solid var(--border-color); cursor:pointer; transition:background 0.2s;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-weight:700; font-size:0.88rem; color:var(--text-heading);">${name}</span>
+                ${roleBadge}
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; color:var(--text-muted);">
+                <span>${count} رسالة</span>
+                <span>${date}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Automatically select first conversation
+      if (this.currentInternChats[0]) {
+        this.selectSupervisorChat(this.currentInternChats[0].conversationId);
+      }
+
+    } catch (err) {
+      console.error('[renderSupervisorInternChats] Error:', err);
+      if (listEl) {
+        listEl.innerHTML = `<div style="text-align:center; padding:24px; color:var(--danger);">${err.message || 'تعذر الاتصال'}</div>`;
+      }
+    }
+  },
+
+  selectSupervisorChat(conversationId) {
+    this.currentSelectedChatId = conversationId;
+    document.querySelectorAll('.chat-patient-item').forEach(el => {
+      el.classList.toggle('active', el.id === `supChatItem_${conversationId}`);
+    });
+
+    const chat = (this.currentInternChats || []).find(c => c.conversationId === conversationId);
+    const viewerEl = document.getElementById('supInternChatViewer');
+    if (!viewerEl || !chat) return;
+
+    const otherName = chat.otherPartyName || 'مريض / مستفيد';
+    const otherRole = chat.otherPartyRole || 'Patient';
+    const messages = chat.recentMessages || [];
+
+    viewerEl.innerHTML = `
+      <div style="display:flex; flex-direction:column; height:100%; min-height:500px;">
+        <!-- Chat Header -->
+        <div style="padding:14px 18px; border-bottom:1px solid var(--border-color); background:var(--bg-card); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h4 style="margin:0; font-size:1rem; font-weight:800; color:var(--text-heading);">${otherName}</h4>
+            <span style="font-size:0.78rem; color:var(--text-muted);">الطرف الآخر: ${otherRole} • قراءة رقابية فقط (Audit Observability)</span>
+          </div>
+          <span class="badge badge-success"><i class="bx bx-check-shield"></i> موثق بالمنظومة</span>
+        </div>
+
+        <!-- Messages Body -->
+        <div style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; background:var(--bg-canvas);">
+          ${messages.length === 0 ? `
+            <div style="text-align:center; padding:32px; color:var(--text-muted);">
+              لا توجد رسائل مسجلة في هذا الشات حالياً.
+            </div>
+          ` : messages.map(m => {
+            const isIntern = (m.senderRole || '').toLowerCase().includes('intern') || (m.senderRole || '').toLowerCase().includes('pharmacist');
+            const align = isIntern ? 'flex-end' : 'flex-start';
+            const bg = isIntern ? 'var(--primary)' : 'var(--bg-card)';
+            const color = isIntern ? '#ffffff' : 'var(--text-heading)';
+            const time = m.createdAt ? new Date(m.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
+            const senderLabel = isIntern ? 'المتدرب' : (m.senderName || otherName);
+
+            return `
+              <div style="align-self:${align}; max-width:75%; display:flex; flex-direction:column; gap:4px;">
+                <span style="font-size:0.72rem; color:var(--text-muted); padding-inline:4px;">${senderLabel} • ${time}</span>
+                <div style="padding:10px 14px; border-radius:var(--radius-md); background:${bg}; color:${color}; font-size:0.86rem; line-height:1.5; box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid var(--border-color);">
+                  ${m.content || ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <!-- Chat Footer Audit Note -->
+        <div style="padding:10px 16px; border-top:1px solid var(--border-color); background:var(--bg-card-2); font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+          <i class="bx bx-info-circle" style="font-size:16px; color:var(--primary);"></i>
+          <span>المعيد والمشرف لديه صلاحية الرصد الكاملة لجميع شاتات المرضى والذكاء الاصطناعي لتقييم سلامة الجرعات والأخلاقيات الطبية.</span>
+        </div>
+      </div>
+    `;
+  },
+
+  // --- 6. Dossier Tab 3: Hours & Verification (GET & POST /supervisor/activities) ---
+  async renderSupervisorInternHours(internUserId) {
+    const tbody = document.getElementById('supInternActivityLogsTbody');
+    const pill = document.getElementById('supHoursSummaryPill');
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; padding:32px; color:var(--text-muted);">
+          <i class="bx bx-loader-alt bx-spin" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+          جاري تحميل سجل الساعات والأنشطة الميدانية...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const logs = await DeanApiService.getSupervisorInternActivityLogs(internUserId);
+      this.currentInternActivityLogs = Array.isArray(logs) ? logs : [];
+
+      let totalLogged = 0;
+      let totalVerified = 0;
+      this.currentInternActivityLogs.forEach(l => {
+        const h = Number(l.hours) || 0;
+        totalLogged += h;
+        if (l.supervisorVerified) totalVerified += h;
+      });
+
+      if (pill) {
+        pill.textContent = `${totalVerified} ساعة موثقة من إجمالي ${totalLogged} ساعة مسجلة`;
+      }
+
+      if (this.currentInternActivityLogs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center; padding:48px 24px; color:var(--text-muted);">
+              <i class="bx bx-time-five" style="font-size:36px; opacity:0.35; margin-bottom:8px; display:block;"></i>
+              <p style="font-weight:700;">لا توجد سجلات ساعات مسجلة بعد لهذا المتدرب</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = this.currentInternActivityLogs.map(log => {
+        const logId = log.logId || log.id;
+        const date = log.date ? new Date(log.date).toLocaleDateString() : '—';
+        const hours = log.hours ?? 0;
+        const desc = log.activityDescription || 'تدريب وتطبيق سريري صيدلي';
+        const isVerified = log.supervisorVerified === true;
+        const verifiedAt = log.supervisorVerifiedAt ? new Date(log.supervisorVerifiedAt).toLocaleDateString() : '';
+
+        return `
+          <tr>
+            <td style="font-weight:600;">${date}</td>
+            <td>
+              <div style="font-size:0.88rem; color:var(--text-heading); font-weight:600;">${desc}</div>
+            </td>
+            <td>
+              <span style="font-weight:800; font-size:0.92rem; color:var(--primary);">${hours} ساعة</span>
+            </td>
+            <td>
+              ${isVerified ? `
+                <span class="badge badge-success"><i class="bx bx-check"></i> موثقة</span>
+                ${verifiedAt ? `<span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;">${verifiedAt}</span>` : ''}
+              ` : `
+                <span class="badge badge-warning"><i class="bx bx-time"></i> بانتظار الاعتماد</span>
+              `}
+            </td>
+            <td>
+              ${isVerified ? `
+                <span style="font-size:0.8rem; color:var(--success); font-weight:700;"><i class="bx bx-badge-check"></i> تم التوثيق</span>
+              ` : `
+                <button class="btn btn-primary" style="padding:5px 14px; font-size:0.82rem; background:var(--success); border-color:var(--success);" onclick="App.verifySupervisorActivityLog('${logId}', '${internUserId}')">
+                  <i class="bx bx-check-shield"></i> توثيق الساعة
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error('[renderSupervisorInternHours] Error:', err);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; padding:32px; color:var(--danger);">
+            حدث خطأ أثناء تحميل الساعات: ${err.message || 'تعذر الاتصال'}
+          </td>
+        </tr>
+      `;
+    }
+  },
+
+  async verifySupervisorActivityLog(logId, internUserId) {
+    if (!logId) return;
+
+    try {
+      this.showToast('جاري توثيق واعتماد ساعات التدريب...', 'info');
+      const res = await DeanApiService.verifySupervisorActivity(logId);
+      if (res && res.success !== false) {
+        this.showToast('تم توثيق الساعات بنجاح واحتسابها للمتدرب ✅', 'success');
+        this.renderSupervisorInternHours(internUserId);
+        this.renderSupervisorDashboard();
+      } else {
+        this.showToast((res && res.message) || 'تعذر توثيق الساعات', 'error');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'تعذر توثيق الساعات', 'error');
+    }
+  },
+
+  // --- 7. Dossier Tab 4: Evaluation (POST /supervisor/evaluations) ---
+  renderSupervisorInternEvaluation(internUserId) {
+    const summaryBox = document.getElementById('supInternPerformanceSummary');
+    if (!summaryBox) return;
+
+    // Calculate drafts quality metrics
+    const drafts = this.currentInternDrafts || [];
+    const totalDrafts = drafts.length;
+    const approvedDrafts = drafts.filter(d => (d.status || '').includes('Approve') || (d.status || '').includes('Accept')).length;
+    const rejectedDrafts = drafts.filter(d => (d.status || '').includes('Reject')).length;
+    const rejectionRate = totalDrafts > 0 ? Math.round((rejectedDrafts / totalDrafts) * 100) : 0;
+
+    summaryBox.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-canvas); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+          <span style="font-weight:600; font-size:0.85rem;">إجمالي المسودات السريرية المقدمة:</span>
+          <span style="font-weight:800; font-size:0.95rem; color:var(--text-heading);">${totalDrafts}</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-canvas); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+          <span style="font-weight:600; font-size:0.85rem;">المسودات المعتمدة:</span>
+          <span style="font-weight:800; font-size:0.95rem; color:var(--success);">${approvedDrafts}</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-canvas); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+          <span style="font-weight:600; font-size:0.85rem;">المسودات المرفوضة:</span>
+          <span style="font-weight:800; font-size:0.95rem; color:var(--danger);">${rejectedDrafts} (${rejectionRate}%)</span>
+        </div>
+
+        ${rejectedDrafts >= 2 ? `
+          <div style="padding:12px; background:rgba(239, 68, 68, 0.08); border:1px solid var(--danger); border-radius:var(--radius-sm); font-size:0.82rem; color:var(--danger); line-height:1.45;">
+            <strong><i class="bx bx-error-circle"></i> تنبيه أداء طبي:</strong>
+            المتدرب لديه عدد ${rejectedDrafts} مسودات مرفوضة. يوصى بخصم درجات في بند المعرفة والقرارات السريرية وتدوين توجيه واضح في خانة التعليقات.
+          </div>
+        ` : `
+          <div style="padding:12px; background:rgba(16, 185, 129, 0.08); border:1px solid var(--success); border-radius:var(--radius-sm); font-size:0.82rem; color:var(--success); line-height:1.45;">
+            <strong><i class="bx bx-check-circle"></i> أداء سريري مستقر:</strong>
+            نسبة اعتماد المسودات ممتازة وتدل على جاهزية وتوافق مع المعايير العلاجية.
+          </div>
+        `}
+      </div>
+    `;
+
+    this.updateEvalScorePreview();
+  },
+
+  updateEvalScorePreview() {
+    const kVal = parseInt(document.getElementById('supScoreInputKnowledge')?.value || '4');
+    const cVal = parseInt(document.getElementById('supScoreInputComm')?.value || '4');
+    const eVal = parseInt(document.getElementById('supScoreInputEthics')?.value || '5');
+
+    const kLabel = document.getElementById('supScoreValKnowledge');
+    const cLabel = document.getElementById('supScoreValComm');
+    const eLabel = document.getElementById('supScoreValEthics');
+
+    if (kLabel) kLabel.textContent = `${kVal} / 5`;
+    if (cLabel) cLabel.textContent = `${cVal} / 5`;
+    if (eLabel) eLabel.textContent = `${eVal} / 5`;
+
+    // Calculate score
+    const avgOutOf5 = (kVal + cVal + eVal) / 3;
+    let overallPercentage = Math.round((avgOutOf5 / 5) * 100);
+
+    // Apply deduction if rejected drafts exist (التقييم بيتخصم منه لو drafts مرفوضة كتير)
+    const drafts = this.currentInternDrafts || [];
+    const rejectedDrafts = drafts.filter(d => (d.status || '').includes('Reject')).length;
+    let penalty = 0;
+    if (rejectedDrafts > 0) {
+      penalty = Math.min(25, rejectedDrafts * 5); // 5% deduction per rejected draft, max 25%
+      overallPercentage = Math.max(40, overallPercentage - penalty);
+    }
+
+    const overallEl = document.getElementById('supScoreCalculatedOverall');
+    const noteEl = document.getElementById('supScoreFormulaNote');
+    if (overallEl) overallEl.textContent = `${overallPercentage}%`;
+    if (noteEl) {
+      noteEl.textContent = penalty > 0 
+        ? `تم خصم ${penalty}% تلقائياً بسبب تكرار ${rejectedDrafts} مسودات مرفوضة` 
+        : `محسوبة بناءً على معايير الكفاءة السريرية والأخلاقيات`;
+    }
+  },
+
+  async submitSupervisorDossierEvaluation(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitDossierEval');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> جاري حفظ التقييم...';
+    }
+
+    const assignmentId = document.getElementById('supDossierEvalAssignmentId')?.value;
+    const kVal = parseInt(document.getElementById('supScoreInputKnowledge')?.value || '4');
+    const cVal = parseInt(document.getElementById('supScoreInputComm')?.value || '4');
+    const eVal = parseInt(document.getElementById('supScoreInputEthics')?.value || '5');
+    const comments = document.getElementById('supDossierEvalComments')?.value || '';
+
+    const overallPctText = document.getElementById('supScoreCalculatedOverall')?.textContent || '85%';
+    const overallScore = parseInt(overallPctText.replace('%', '')) || 85;
+
+    if (!assignmentId) {
+      this.showToast('تعذر العثور على معرّف التعيين (assignmentId) لهذا المتدرب', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+      return;
+    }
+
+    try {
+      const payload = {
+        assignmentId: assignmentId,
+        clinicalKnowledgeScore: kVal,
+        communicationScore: cVal,
+        ethicsAndDisciplineScore: eVal,
+        supervisorComments: comments,
+        criteriaScores: {
+          clinicalKnowledge: kVal,
+          communication: cVal,
+          ethicsAndDiscipline: eVal
+        },
+        overallScore: overallScore,
+        comments: comments
+      };
+
+      const res = await DeanApiService.submitSupervisorEvaluation(payload);
+      if (res && res.success !== false) {
+        this.showToast('تم اعتماد وتسجيل التقييم السريري للمتدرب بنجاح ✅', 'success');
+        document.getElementById('supDossierEvalComments').value = '';
+      } else {
+        this.showToast((res && res.message) || 'تعذر إرسال التقييم', 'error');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'تعذر تسجيل التقييم', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+  },
+
+  // --- 8. Supervisor Drafts Queue View (Global) ---
   currentSupervisorDraftFilter: 'PendingSupervisorReview',
 
   filterSupervisorDrafts(status) {
@@ -1685,6 +2556,7 @@ const App = {
     const chips = {
       'PendingSupervisorReview': 'chipDraftPending',
       'Accepted': 'chipDraftAccepted',
+      'Approved': 'chipDraftAccepted',
       'Rejected': 'chipDraftRejected'
     };
     ['chipDraftPending', 'chipDraftAccepted', 'chipDraftRejected'].forEach(id => {
@@ -1708,13 +2580,15 @@ const App = {
 
     try {
       const drafts = await DeanApiService.getSupervisorDrafts({ status });
+      const draftsList = Array.isArray(drafts) ? drafts : (drafts && drafts.items ? drafts.items : []);
+
       const badge = document.getElementById('sidebarSupDraftsCount');
       if (badge && status === 'PendingSupervisorReview') {
-        badge.textContent = Array.isArray(drafts) ? drafts.length : 0;
-        badge.style.display = (Array.isArray(drafts) && drafts.length > 0) ? 'inline-block' : 'none';
+        badge.textContent = draftsList.length;
+        badge.style.display = draftsList.length > 0 ? 'inline-block' : 'none';
       }
 
-      if (!drafts || drafts.length === 0) {
+      if (!draftsList || draftsList.length === 0) {
         listEl.innerHTML = `
           <div class="empty-state-box" style="padding:48px 24px; text-align:center; color:var(--text-muted);">
             <i class="bx bx-file-blank" style="font-size:44px; opacity:0.35; margin-bottom:12px; display:block;"></i>
@@ -1725,30 +2599,30 @@ const App = {
         return;
       }
 
-      listEl.innerHTML = drafts.map(d => {
+      listEl.innerHTML = draftsList.map(d => {
         const internName = d.internName || 'متدرب';
         const date = d.createdAt || d.submittedAt ? new Date(d.createdAt || d.submittedAt).toLocaleDateString() : '—';
-        const title = d.caseTitle || d.diagnosis || d.patientCase || 'توصية علاجية / استشارة سريرية';
-        const meds = d.medicationPlan || d.recommendation || d.notes || d.description || 'لا توجد تفاصيل إضافية';
-        const draftId = d.id;
+        const title = d.caseTitle || d.diagnosis || d.patientCase || (d.entityKind === 'PrescriptionReview' ? 'فحص روشتة طبية' : 'خطة علاج دوائية');
+        const meds = d.medicationPlan || d.recommendation || d.notes || d.internClinicalNotes || d.description || 'لا توجد تفاصيل إضافية';
+        const draftId = d.draftId || d.id;
         const currentStatus = d.status || status;
 
         let statusBadge = `<span class="badge badge-warning">قيد المراجعة</span>`;
-        if (currentStatus === 'Accepted') {
+        if (currentStatus === 'Accepted' || currentStatus === 'Approved') {
           statusBadge = `<span class="badge badge-success"><i class="bx bx-check"></i> معتمدة</span>`;
         } else if (currentStatus === 'Rejected') {
           statusBadge = `<span class="badge badge-danger"><i class="bx bx-x"></i> مرفوضة</span>`;
         }
 
         let actionButtons = '';
-        if (currentStatus === 'PendingSupervisorReview' || (!String(currentStatus).includes('Accepted') && !String(currentStatus).includes('Rejected'))) {
+        if (currentStatus === 'PendingSupervisorReview' || (!String(currentStatus).includes('Accepted') && !String(currentStatus).includes('Approved') && !String(currentStatus).includes('Rejected'))) {
           actionButtons = `
             <div style="display:flex; gap:8px; margin-top:12px;">
-              <button class="btn btn-primary" style="padding:6px 14px; font-size:0.85rem;" onclick="App.approveSupervisorDraft('${draftId}')">
-                <i class="bx bx-check"></i> اعتماد المسودة
+              <button class="btn btn-primary" style="padding:6px 16px; font-size:0.85rem;" onclick="App.approveSupervisorDraft('${draftId}')">
+                <i class="bx bx-check"></i> اعتماد المسودة (Approve)
               </button>
-              <button class="btn btn-outline-danger" style="padding:6px 14px; font-size:0.85rem;" onclick="App.openRejectDraftModal('${draftId}')">
-                <i class="bx bx-x"></i> رفض مع ملاحظات
+              <button class="btn btn-outline-danger" style="padding:6px 16px; font-size:0.85rem;" onclick="App.openRejectDraftModal('${draftId}')">
+                <i class="bx bx-x"></i> رفض مع ملاحظات (Reject)
               </button>
             </div>
           `;
@@ -1795,9 +2669,14 @@ const App = {
   async approveSupervisorDraft(draftId) {
     try {
       this.showToast('جاري اعتماد المسودة الطبية...', 'info');
-      await DeanApiService.approveSupervisorDraft(draftId, 'Accepted', '');
-      this.showToast('تم اعتماد المسودة الطبية بنجاح ✅', 'success');
-      this.renderSupervisorDrafts();
+      const res = await DeanApiService.approveSupervisorDraft(draftId, 'Approve', 'تم الاعتماد السريري بنجاح');
+      if (res && res.success !== false) {
+        this.showToast('تم اعتماد المسودة الطبية بنجاح ✅ تحولت إلى واقع سريري', 'success');
+        this.renderSupervisorDrafts();
+        this.renderSupervisorDashboard();
+      } else {
+        this.showToast((res && res.message) || 'تعذر اعتماد المسودة', 'error');
+      }
     } catch (err) {
       this.showToast(err.message || 'تعذر اعتماد المسودة', 'error');
     }
@@ -1825,10 +2704,15 @@ const App = {
 
     try {
       this.showToast('جاري إرسال الرفض والملاحظات...', 'info');
-      await DeanApiService.approveSupervisorDraft(draftId, 'Rejected', feedback);
-      this.closeRejectDraftModal();
-      this.showToast('تم رفض المسودة وإرسال الملاحظات للمتدرب بنجاح', 'success');
-      this.renderSupervisorDrafts();
+      const res = await DeanApiService.approveSupervisorDraft(draftId, 'Reject', feedback);
+      if (res && res.success !== false) {
+        this.closeRejectDraftModal();
+        this.showToast('تم رفض المسودة وإرسال الملاحظات للمتدرب بنجاح', 'success');
+        this.renderSupervisorDrafts();
+        this.renderSupervisorDashboard();
+      } else {
+        this.showToast((res && res.message) || 'تعذر رفض المسودة', 'error');
+      }
     } catch (err) {
       this.showToast(err.message || 'تعذر رفض المسودة', 'error');
     }
@@ -1858,19 +2742,36 @@ const App = {
     }
 
     try {
+      const assignmentId = document.getElementById('evalInternAssignmentId')?.value;
+      const kVal = Math.round(parseFloat(document.getElementById('evalKnowledgeScore')?.value || '4'));
+      const cVal = Math.round(parseFloat(document.getElementById('evalCommunicationScore')?.value || '4'));
+      const eVal = Math.round(parseFloat(document.getElementById('evalEthicsScore')?.value || '5'));
+      const overallVal = Math.round(parseFloat(document.getElementById('evalOverallScore')?.value || '4.5') * 20); // 1-5 scale mapped to percentage e.g. 90
+      const comments = document.getElementById('evalComments')?.value || '';
+
       const payload = {
-        internshipAssignmentId: document.getElementById('evalInternAssignmentId')?.value,
-        knowledgeScore: parseFloat(document.getElementById('evalKnowledgeScore')?.value || '4'),
-        communicationScore: parseFloat(document.getElementById('evalCommunicationScore')?.value || '4'),
-        ethicsScore: parseFloat(document.getElementById('evalEthicsScore')?.value || '5'),
-        overallRating: parseFloat(document.getElementById('evalOverallScore')?.value || '4.5'),
-        comments: document.getElementById('evalComments')?.value || ''
+        assignmentId: assignmentId,
+        clinicalKnowledgeScore: kVal,
+        communicationScore: cVal,
+        ethicsAndDisciplineScore: eVal,
+        supervisorComments: comments,
+        criteriaScores: {
+          clinicalKnowledge: kVal,
+          communication: cVal,
+          ethicsAndDiscipline: eVal
+        },
+        overallScore: overallVal,
+        comments: comments
       };
 
-      await DeanApiService.submitSupervisorEvaluation(payload);
-      this.closeSupervisorEvaluationModal();
-      this.showToast('تم تسجيل التقييم الدوري بنجاح ✅', 'success');
-      this.renderSupervisorInterns();
+      const res = await DeanApiService.submitSupervisorEvaluation(payload);
+      if (res && res.success !== false) {
+        this.closeSupervisorEvaluationModal();
+        this.showToast('تم تسجيل التقييم الدوري بنجاح ✅', 'success');
+        this.renderSupervisorInterns();
+      } else {
+        this.showToast((res && res.message) || 'تعذر تسجيل التقييم', 'error');
+      }
     } catch (err) {
       this.showToast(err.message || 'تعذر تسجيل التقييم', 'error');
     } finally {

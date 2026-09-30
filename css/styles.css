@@ -2507,4 +2507,63 @@ body {
   font-family: var(--font-latin);
 }
 
+/* ====================================================================
+   NEW: Supervisor Workspace & Dossier Styling
+   ==================================================================== */
+.sup-dossier-tab-content {
+  animation: fadeInTab 0.25s ease-in-out;
+}
+
+@keyframes fadeInTab {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-patient-item:hover {
+  background: var(--bg-card-hover) !important;
+}
+
+.chat-patient-item.active {
+  background: var(--bg-card-2) !important;
+  border-inline-start: 3px solid var(--primary);
+}
+
+input[type=range].form-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-color);
+  height: 8px;
+  border-radius: var(--radius-full);
+  outline: none;
+}
+
+input[type=range].form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--primary-glow);
+  border: 2px solid #ffffff;
+}
+
+input[type=range].form-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--primary-glow);
+  border: 2px solid #ffffff;
+}
+
 

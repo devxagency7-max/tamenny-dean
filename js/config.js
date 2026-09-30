@@ -47,9 +47,12 @@ const DeanConfig = {
     setSupervisorActive: (id) => `/dean/supervisors/${id}/set-active`,
     partnerPharmacies: '/dean/partner-pharmacies',
 
-    // Supervisor Endpoints (Part 5 & 7 API Guide)
+    // Supervisor Endpoints (Part 5 & 7 API Guide + Intern Observability)
     supervisorMyInterns: '/supervisor/my-interns',
     supervisorDrafts: '/supervisor/drafts',
+    supervisorInternClinicalOperations: (internUserId) => `/supervisor/interns/${internUserId}/clinical-operations`,
+    supervisorInternChats: (internUserId) => `/supervisor/interns/${internUserId}/chats`,
+    supervisorInternActivityLogs: (internUserId) => `/supervisor/interns/${internUserId}/activity-logs`,
     supervisorApproveDraft: (id) => `/supervisor/drafts/${id}/approve`,
     supervisorVerifyActivity: (logId) => `/supervisor/activities/${logId}/verify`,
     supervisorEvaluations: '/supervisor/evaluations',

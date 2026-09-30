@@ -191,10 +191,34 @@ const DeanApiService = {
     return (res && Array.isArray(res.data)) ? res.data : [];
   },
 
-  // --- Supervisor Endpoints (Part 5 & 7 API Guide) ---
+  // --- Supervisor Endpoints (Part 5 & 7 API Guide + Intern-Patient Observability) ---
   async getSupervisorMyInterns() {
     const res = await this.request(DeanConfig.endpoints.supervisorMyInterns);
     return (res && Array.isArray(res.data)) ? res.data : [];
+  },
+
+  async getSupervisorInternClinicalOperations(internUserId) {
+    if (!internUserId) return [];
+    const res = await this.request(DeanConfig.endpoints.supervisorInternClinicalOperations(internUserId));
+    if (res && Array.isArray(res.data)) return res.data;
+    if (res && res.data && Array.isArray(res.data.items)) return res.data.items;
+    return [];
+  },
+
+  async getSupervisorInternChats(internUserId) {
+    if (!internUserId) return [];
+    const res = await this.request(DeanConfig.endpoints.supervisorInternChats(internUserId));
+    if (res && Array.isArray(res.data)) return res.data;
+    if (res && res.data && Array.isArray(res.data.items)) return res.data.items;
+    return [];
+  },
+
+  async getSupervisorInternActivityLogs(internUserId) {
+    if (!internUserId) return [];
+    const res = await this.request(DeanConfig.endpoints.supervisorInternActivityLogs(internUserId));
+    if (res && Array.isArray(res.data)) return res.data;
+    if (res && res.data && Array.isArray(res.data.items)) return res.data.items;
+    return [];
   },
 
   async getSupervisorDrafts(params = {}) {
@@ -207,9 +231,14 @@ const DeanApiService = {
   },
 
   async approveSupervisorDraft(draftId, decision, feedback = '') {
+    // Backend ReviewDraftRequest accepts "Approve" or "Reject"
+    const normalizedDecision = (String(decision).toLowerCase().startsWith('app') || String(decision).toLowerCase().startsWith('acc'))
+      ? 'Approve'
+      : 'Reject';
+
     const res = await this.request(DeanConfig.endpoints.supervisorApproveDraft(draftId), {
       method: 'POST',
-      body: JSON.stringify({ decision, feedback })
+      body: JSON.stringify({ decision: normalizedDecision, feedback: feedback || null })
     });
     return res;
   },
