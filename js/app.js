@@ -1496,8 +1496,8 @@ const App = {
           <tr>
             <td colspan="6" style="text-align:center; padding:48px 24px; color:var(--text-muted);">
               <i class="bx bx-user-x" style="font-size:36px; opacity:0.4; margin-bottom:8px; display:block;"></i>
-              <p style="font-weight:600; margin-bottom:4px;">لا يوجد متدربون مسندون حالياً</p>
-              <span style="font-size:0.85rem;">سيظهر هنا المتدربون بمجرد قيام عميد الكلية بتسكينهم تحت إشرافك</span>
+              <p style="font-weight:600; margin-bottom:4px;">${t('empty_interns_title')}</p>
+              <span style="font-size:0.85rem;">${t('empty_interns_sub')}</span>
             </td>
           </tr>
         `;
@@ -1613,8 +1613,8 @@ const App = {
         listEl.innerHTML = `
           <div class="empty-state-box" style="padding:48px 24px; text-align:center; color:var(--text-muted);">
             <i class="bx bx-file-blank" style="font-size:44px; opacity:0.35; margin-bottom:12px; display:block;"></i>
-            <h4 style="font-weight:700; margin-bottom:4px;">لا توجد مسودات في هذه القائمة</h4>
-            <p style="font-size:0.85rem; max-width:400px; margin:0 auto;">سيتم إدراج التوصيات العلاجية هنا بمجرد تقديمها من المتدربين التابعين لإشرافك.</p>
+            <h4 style="font-weight:700; margin-bottom:4px;">${t('empty_drafts_title')}</h4>
+            <p style="font-size:0.85rem; max-width:440px; margin:0 auto;">${t('empty_drafts_sub')}</p>
           </div>
         `;
         return;
@@ -1778,6 +1778,8 @@ const App = {
 
   renderSupervisorProfile() {
     const email = localStorage.getItem('tameny_dean_email') || 'supervisor@tamenny.com';
+    const lang = document.documentElement.getAttribute('lang') || 'en';
+    const isAr = lang === 'ar';
     const topAvatar = document.getElementById('topbarDeanAvatar');
     const topName = document.getElementById('topbarDeanName');
     const topRole = document.getElementById('topbarDeanRole');
@@ -1786,9 +1788,9 @@ const App = {
 
     if (topAvatar) topAvatar.textContent = (email.charAt(0) || 'S').toUpperCase();
     if (topName) topName.textContent = email.split('@')[0];
-    if (topRole) topRole.textContent = 'Academic Supervisor';
-    if (sideFacultyName) sideFacultyName.textContent = 'منصة المشرف الأكاديمي';
-    if (sideFacultyUni) sideFacultyUni.textContent = 'إشراف التدريب السريري';
+    if (topRole) topRole.textContent = isAr ? 'مشرف أكاديمي' : 'Academic Supervisor';
+    if (sideFacultyName) sideFacultyName.textContent = isAr ? 'منصة المشرف الأكاديمي' : 'Supervisor Observatory';
+    if (sideFacultyUni) sideFacultyUni.textContent = isAr ? 'إشراف التدريب السريري' : 'Clinical Mentorship Portal';
   },
 
   // --- Export / Print Feature ---

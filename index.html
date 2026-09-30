@@ -672,15 +672,15 @@
               </div>
 
               <!-- Draft Status Tabs -->
-              <div class="quick-filter-chips">
-                <button class="chip-filter active" id="chipDraftPending" onclick="App.filterSupervisorDrafts('PendingSupervisorReview')">
-                  Pending Review
+              <div class="filter-pills">
+                <button class="filter-pill active" id="chipDraftPending" onclick="App.filterSupervisorDrafts('PendingSupervisorReview')">
+                  <i class="bx bx-time-five"></i> <span data-i18n="filter_pending">Pending Review</span>
                 </button>
-                <button class="chip-filter" id="chipDraftAccepted" onclick="App.filterSupervisorDrafts('Accepted')">
-                  Approved
+                <button class="filter-pill" id="chipDraftAccepted" onclick="App.filterSupervisorDrafts('Accepted')">
+                  <i class="bx bx-check-circle"></i> <span data-i18n="filter_approved">Approved</span>
                 </button>
-                <button class="chip-filter" id="chipDraftRejected" onclick="App.filterSupervisorDrafts('Rejected')">
-                  Rejected
+                <button class="filter-pill" id="chipDraftRejected" onclick="App.filterSupervisorDrafts('Rejected')">
+                  <i class="bx bx-x-circle"></i> <span data-i18n="filter_rejected">Rejected</span>
                 </button>
               </div>
             </div>
