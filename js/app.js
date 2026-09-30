@@ -369,11 +369,11 @@ const App = {
   renderDeanProfile() {
     const dean = this.getStoredDeanData();
     const lang = document.documentElement.getAttribute('lang') || 'en';
-    const name = dean.name || dean.fullName || DeanConfig.currentDean.name;
-    const university = dean.university || dean.universityName || DeanConfig.currentDean.university;
-    const faculty = dean.faculty || dean.facultyName || DeanConfig.currentDean.faculty;
-    const title = dean.academicTitle || dean.title || (lang === 'en' ? 'Dean of Faculty' : 'عميد الكلية');
-    const degree = dean.degree || DeanConfig.currentDean.degree;
+    const name = dean.name || dean.fullName || '';
+    const university = dean.university || dean.universityName || '';
+    const faculty = dean.faculty || dean.facultyName || '';
+    const title = dean.academicTitle || dean.title || '';
+    const degree = dean.degree || '';
     const avatar = (name || 'D').trim().charAt(0).toUpperCase();
 
     // Topbar Profile
@@ -402,12 +402,15 @@ const App = {
 
     if (pAvatar) pAvatar.textContent = avatar;
     if (pName) pName.textContent = name;
-    if (pTitle) pTitle.textContent = `${title} — ${university}`;
-    if (pDegree) pDegree.textContent = degree;
+    if (pTitle) pTitle.textContent = title ? (university ? `${title} — ${university}` : title) : university;
+    if (pDegree) {
+      pDegree.textContent = degree;
+      pDegree.style.display = degree ? 'block' : 'none';
+    }
     if (pEmail) pEmail.textContent = dean.email || '';
     if (pPhone) pPhone.textContent = dean.phone || '';
     if (pOffice) pOffice.textContent = dean.office || '';
-    if (pInstitution) pInstitution.textContent = `${university} — ${faculty}`;
+    if (pInstitution) pInstitution.textContent = (university && faculty) ? `${university} — ${faculty}` : (university || faculty || '');
 
     // Settings / Faculty Profile View
     const setUniversity = document.getElementById('settingsUniversityName');
@@ -417,7 +420,7 @@ const App = {
     if (setUniversity) setUniversity.textContent = university;
     if (setFaculty) setFaculty.textContent = faculty;
     if (setDean) setDean.textContent = name;
-    if (setSubtitle) setSubtitle.textContent = `${university} — ${faculty}`;
+    if (setSubtitle) setSubtitle.textContent = (university && faculty) ? `${university} — ${faculty}` : (university || faculty || '');
   },
 
   openEditProfileModal() {
@@ -427,9 +430,9 @@ const App = {
     const officeInput = document.getElementById('editDeanOffice');
     const modal = document.getElementById('editProfileModal');
 
-    if (emailInput) emailInput.value = dean.email;
-    if (phoneInput) phoneInput.value = dean.phone;
-    if (officeInput) officeInput.value = dean.office;
+    if (emailInput) emailInput.value = dean.email || '';
+    if (phoneInput) phoneInput.value = dean.phone || '';
+    if (officeInput) officeInput.value = dean.office || '';
 
     if (modal) modal.classList.add('active');
   },
@@ -441,14 +444,15 @@ const App = {
 
   async saveProfileDetails(e) {
     e.preventDefault();
+    const dean = this.getStoredDeanData();
     const emailInput = document.getElementById('editDeanEmail');
     const phoneInput = document.getElementById('editDeanPhone');
     const officeInput = document.getElementById('editDeanOffice');
 
     const payload = {
-      email: emailInput ? emailInput.value.trim() : DeanConfig.currentDean.email,
-      phone: phoneInput ? phoneInput.value.trim() : DeanConfig.currentDean.phone,
-      office: officeInput ? officeInput.value.trim() : DeanConfig.currentDean.office
+      email: emailInput ? emailInput.value.trim() : (dean.email || ''),
+      phone: phoneInput ? phoneInput.value.trim() : (dean.phone || ''),
+      office: officeInput ? officeInput.value.trim() : (dean.office || '')
     };
 
     await DeanApiService.updateDeanProfile(payload);
