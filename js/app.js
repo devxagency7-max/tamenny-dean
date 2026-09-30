@@ -286,6 +286,8 @@ const App = {
       en: {
         dashboard: { title: 'Dashboard', sub: '' },
         interns: { title: 'Interns Directory', sub: '' },
+        unassigned: { title: 'Unassigned Placement Queue', sub: '' },
+        supervisors: { title: 'Academic Supervisors Directory', sub: '' },
         'intern-detail': { title: 'Student Clinical Dossier', sub: '' },
         profile: { title: 'Dean Profile', sub: '' },
         settings: { title: 'Faculty Settings', sub: '' },
@@ -293,6 +295,8 @@ const App = {
       ar: {
         dashboard: { title: 'الرئيسية', sub: '' },
         interns: { title: 'سجل المتدربين', sub: '' },
+        unassigned: { title: 'قائمة انتظار التسكين', sub: '' },
+        supervisors: { title: 'المشرفون الأكاديميون', sub: '' },
         'intern-detail': { title: 'الملف الطبي للمتدرب', sub: '' },
         profile: { title: 'الملف الشخصي للعميد', sub: '' },
         settings: { title: 'ملف الكلية', sub: '' },
@@ -311,6 +315,8 @@ const App = {
     this.renderDeanProfile();
     this.renderDashboard();
     this.renderInternsTable();
+    this.renderUnassignedInterns();
+    this.renderSupervisors();
     this.refreshDeanProfileFromBackend();
   },
 
@@ -714,6 +720,286 @@ const App = {
         </tr>
       `;
     }).join('');
+  },
+
+  // --- Render Unassigned Interns Queue (Part 4.4 API Guide) ---
+  async renderUnassignedInterns() {
+    const tbody = document.getElementById('unassignedTableBody');
+    const badge = document.getElementById('sidebarUnassignedCount');
+
+    const unassigned = await DeanApiService.getUnassignedInterns();
+    if (badge) badge.textContent = unassigned.length;
+
+    if (!tbody) return;
+
+    if (unassigned.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; padding: 40px; color:var(--text-muted);">
+            <i class="bx bx-check-shield" style="font-size: 2.4rem; color:var(--success); margin-bottom: 8px; display:block;"></i>
+            ${t('no_results')} — All approved interns in your faculty are assigned!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = unassigned.map(i => {
+      const approvedAt = i.applicationApprovedAt ? new Date(i.applicationApprovedAt).toLocaleDateString() : '—';
+      const initial = (i.name || 'S').trim().slice(0, 2);
+      const safeName = (i.name || '').replace(/'/g, "\\'");
+      return `
+        <tr>
+          <td>
+            <div class="student-cell">
+              <div class="student-avatar">${initial}</div>
+              <div class="student-meta">
+                <span class="student-name">${i.name}</span>
+                <span class="student-id">${i.email}</span>
+              </div>
+            </div>
+          </td>
+          <td><span dir="ltr">${i.phone || '—'}</span></td>
+          <td>${i.universityName || '—'}</td>
+          <td><span class="audit-item-date">${approvedAt}</span></td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="App.openAssignInternModal('${i.userId}', '${safeName}')">
+              <i class="bx bx-user-check"></i> ${t('btn_assign_intern')}
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  // --- Render Academic Supervisors (Part 4.2 API Guide) ---
+  async renderSupervisors() {
+    const tbody = document.getElementById('supervisorsTableBody');
+    const badge = document.getElementById('sidebarSupervisorsCount');
+
+    const supervisors = await DeanApiService.getSupervisors();
+    if (badge) badge.textContent = supervisors.length;
+
+    if (!tbody) return;
+
+    if (supervisors.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding: 40px; color:var(--text-muted);">
+            <i class="bx bx-group" style="font-size: 2.4rem; color:var(--text-light); margin-bottom: 8px; display:block;"></i>
+            No academic supervisors created yet for your faculty.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = supervisors.map(s => {
+      const initial = (s.name || 'Dr').trim().slice(0, 2);
+      const activeCount = s.currentActiveInternCount ?? 0;
+      const maxCap = s.maxInternCapacity ?? 10;
+      const pct = Math.min(100, Math.round((activeCount / maxCap) * 100));
+      return `
+        <tr>
+          <td>
+            <div class="student-cell">
+              <div class="student-avatar" style="background:var(--primary-light); color:var(--primary);">${initial}</div>
+              <div class="student-meta">
+                <span class="student-name">${s.name}</span>
+                <span class="student-id">${s.email}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span dir="ltr">${s.phone || '—'}</span>
+          </td>
+          <td>
+            <span style="font-family:monospace; font-weight:700;">${s.syndicateLicenseNumber || '—'}</span>
+          </td>
+          <td>
+            <span>${s.yearsOfExperience ?? 0} Yrs</span>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:700;">${activeCount} / ${maxCap}</span>
+              <div style="width:60px; height:6px; background:var(--bg-input); border-radius:3px; overflow:hidden;">
+                <div style="width:${pct}%; height:100%; background:${pct >= 100 ? 'var(--danger)' : 'var(--primary)'};"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge ${s.isActive !== false ? 'active' : 'risk'}">
+              <span class="status-dot"></span>
+              ${s.isActive !== false ? t('status_active') : 'Inactive'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  // --- Supervisor Creation Modal handlers ---
+  openCreateSupervisorModal() {
+    const modal = document.getElementById('createSupervisorModal');
+    if (modal) modal.classList.add('active');
+  },
+
+  closeCreateSupervisorModal() {
+    const modal = document.getElementById('createSupervisorModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  async saveSupervisorDetails(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveSupervisor');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Minting...'; }
+
+    const payload = {
+      name: document.getElementById('supName').value.trim(),
+      email: document.getElementById('supEmail').value.trim(),
+      phone: document.getElementById('supPhone').value.trim(),
+      syndicateLicenseNumber: document.getElementById('supLicense').value.trim(),
+      yearsOfExperience: parseInt(document.getElementById('supExperience').value, 10) || 0,
+      maxInternCapacity: parseInt(document.getElementById('supCapacity').value, 10) || 10
+    };
+
+    const res = await DeanApiService.createSupervisor(payload);
+
+    if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+
+    if (res && res.success) {
+      this.closeCreateSupervisorModal();
+      this.renderSupervisors();
+
+      // Show generated one-time password
+      const passwordBox = document.getElementById('generatedPasswordBox');
+      if (passwordBox && res.data && res.data.generatedPassword) {
+        passwordBox.textContent = res.data.generatedPassword;
+        this.latestGeneratedPassword = res.data.generatedPassword;
+      }
+      const passModal = document.getElementById('supervisorPasswordModal');
+      if (passModal) passModal.classList.add('active');
+
+      this.showToast('تم إنشاء حساب المشرف بنجاح', 'success');
+    } else {
+      this.showToast(res ? res.message : 'فشل إنشاء حساب المشرف', 'error');
+    }
+  },
+
+  closeSupervisorPasswordModal() {
+    const passModal = document.getElementById('supervisorPasswordModal');
+    if (passModal) passModal.classList.remove('active');
+  },
+
+  copyGeneratedPassword() {
+    if (this.latestGeneratedPassword) {
+      navigator.clipboard.writeText(this.latestGeneratedPassword);
+      this.showToast(t('toast_copied'), 'success');
+    }
+  },
+
+  // --- Assign Intern Modal handlers (Part 4.4 API Guide) ---
+  async openAssignInternModal(internUserId, internName) {
+    const modal = document.getElementById('assignInternModal');
+    if (!modal) return;
+
+    document.getElementById('assignInternUserId').value = internUserId;
+    document.getElementById('assignInternName').value = internName;
+    document.getElementById('assignStartDate').value = new Date().toISOString().split('T')[0];
+
+    // Load selects
+    const progSelect = document.getElementById('assignProgramSelect');
+    const supSelect = document.getElementById('assignSupervisorSelect');
+    const pharmSelect = document.getElementById('assignPharmacySelect');
+
+    progSelect.innerHTML = '<option value="">— Loading... —</option>';
+    supSelect.innerHTML = '<option value="">— Loading... —</option>';
+    pharmSelect.innerHTML = '<option value="">— Loading... —</option>';
+
+    modal.classList.add('active');
+
+    const [programs, supervisors, pharmacies] = await Promise.all([
+      DeanApiService.getTrainingPrograms(),
+      DeanApiService.getSupervisors(),
+      DeanApiService.getPartnerPharmacies()
+    ]);
+
+    // Programs
+    if (programs && programs.length > 0) {
+      progSelect.innerHTML = programs.map(p => `<option value="${p.id}">${p.programName} (${p.academicYear || ''})</option>`).join('');
+    } else {
+      progSelect.innerHTML = '<option value="">No training programs found</option>';
+    }
+
+    // Supervisors
+    if (supervisors && supervisors.length > 0) {
+      supSelect.innerHTML = supervisors.map(s => `<option value="${s.id}">${s.name} (${s.currentActiveInternCount ?? 0}/${s.maxInternCapacity ?? 10})</option>`).join('');
+    } else {
+      supSelect.innerHTML = '<option value="">No supervisors created yet (Add supervisor first)</option>';
+    }
+
+    // Pharmacies & Branches
+    if (pharmacies && pharmacies.length > 0) {
+      const options = [];
+      pharmacies.forEach(p => {
+        if (p.branches && p.branches.length > 0) {
+          p.branches.forEach(b => {
+            options.push({ pharmacyId: p.id, branchId: b.id, label: `${p.chainName || p.name} — ${b.branchName || b.name}` });
+          });
+        } else {
+          options.push({ pharmacyId: p.id, branchId: p.id, label: p.chainName || p.name });
+        }
+      });
+      pharmSelect.innerHTML = options.map(o => `<option value="${o.pharmacyId}:${o.branchId}">${o.label}</option>`).join('');
+    } else {
+      pharmSelect.innerHTML = '<option value="">No partner pharmacies found</option>';
+    }
+  },
+
+  closeAssignInternModal() {
+    const modal = document.getElementById('assignInternModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  async submitInternshipAssignment(e) {
+    e.preventDefault();
+    const dean = this.getStoredDeanData();
+    const btn = document.getElementById('btnSubmitAssign');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Assigning...'; }
+
+    const pharmVal = document.getElementById('assignPharmacySelect').value || '';
+    const [pharmacyId, branchId] = pharmVal.split(':');
+
+    const payload = {
+      internUserId: document.getElementById('assignInternUserId').value,
+      facultyId: dean.facultyId || DeanConfig.currentDean.facultyId,
+      trainingProgramId: document.getElementById('assignProgramSelect').value,
+      supervisorId: document.getElementById('assignSupervisorSelect').value,
+      pharmacyId: pharmacyId || '',
+      branchId: branchId || pharmacyId || '',
+      startDate: document.getElementById('assignStartDate').value ? new Date(document.getElementById('assignStartDate').value).toISOString() : new Date().toISOString(),
+    };
+
+    const endDateVal = document.getElementById('assignEndDate').value;
+    if (endDateVal) {
+      payload.expectedEndDate = new Date(endDateVal).toISOString();
+    }
+
+    const res = await DeanApiService.createInternshipAssignment(payload);
+
+    if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+
+    if (res && res.success) {
+      this.closeAssignInternModal();
+      this.renderUnassignedInterns();
+      this.renderInternsTable();
+      this.renderDashboard();
+      this.showToast('تم تسكين المتدرب وتعيين المشرف بنجاح', 'success');
+    } else {
+      this.showToast(res ? res.message : 'فشل تسكين المتدرب', 'error');
+    }
   },
 
   // --- Full-Page Intern Dossier (NOT A MODAL) ---

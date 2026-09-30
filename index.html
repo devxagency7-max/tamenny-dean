@@ -58,6 +58,18 @@
           <span class="nav-item-badge" id="sidebarInternsCount">—</span>
         </a>
 
+        <a class="nav-item" data-view="unassigned">
+          <i class="bx bxs-user-plus"></i>
+          <span data-i18n="nav_unassigned">Unassigned Queue</span>
+          <span class="nav-item-badge" id="sidebarUnassignedCount">0</span>
+        </a>
+
+        <a class="nav-item" data-view="supervisors">
+          <i class="bx bxs-group"></i>
+          <span data-i18n="nav_supervisors">Academic Supervisors</span>
+          <span class="nav-item-badge" id="sidebarSupervisorsCount">—</span>
+        </a>
+
         <span class="nav-section-title" data-i18n="nav_section_system">SYSTEM</span>
 
         <a class="nav-item" data-view="profile">
@@ -519,6 +531,78 @@
         </section>
 
         <!-- ================================================================
+             SECTION 3.5: UNASSIGNED QUEUE (PLACEMENT WAITING LIST)
+             ================================================================ -->
+        <section class="view-section" id="view-unassigned">
+          <div class="card-panel">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bxs-user-plus"></i></div>
+                <div>
+                  <h3 class="card-title" data-i18n="unassigned_title">Unassigned Interns Placement Queue</h3>
+                  <p class="card-subtitle" data-i18n="unassigned_sub">Approved interns waiting for faculty placement</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="margin-top: 16px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="table_col_intern">Intern</th>
+                    <th data-i18n="field_phone">Phone</th>
+                    <th data-i18n="label_university">University</th>
+                    <th>Approved At</th>
+                    <th data-i18n="table_col_actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="unassignedTableBody">
+                  <!-- Injected via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 3.6: ACADEMIC SUPERVISORS DIRECTORY
+             ================================================================ -->
+        <section class="view-section" id="view-supervisors">
+          <div class="card-panel">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bxs-group"></i></div>
+                <div>
+                  <h3 class="card-title" data-i18n="supervisors_title">Academic Supervisors Directory</h3>
+                  <p class="card-subtitle" data-i18n="supervisors_sub">Faculty Teaching Staff & Clinical Mentors</p>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="App.openCreateSupervisorModal()">
+                <i class="bx bx-plus-circle"></i> <span data-i18n="btn_create_supervisor">Add Academic Supervisor</span>
+              </button>
+            </div>
+
+            <div class="table-responsive" style="margin-top: 16px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="col_supervisor_name">Supervisor Name</th>
+                    <th data-i18n="label_academic_email">Email / Phone</th>
+                    <th data-i18n="col_syndicate_license">Syndicate License</th>
+                    <th data-i18n="col_experience">Experience</th>
+                    <th data-i18n="col_capacity">Intern Load</th>
+                    <th data-i18n="table_col_status">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="supervisorsTableBody">
+                  <!-- Injected via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
              SECTION 4: SETTINGS & FACULTY PROFILE
              ================================================================ -->
         <section class="view-section" id="view-settings">
@@ -706,6 +790,148 @@
         <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
           <button type="button" class="btn btn-outline" onclick="App.closeEditProfileModal()" data-i18n="btn_cancel">Cancel</button>
           <button type="submit" class="btn btn-primary"><i class="bx bx-check"></i> <span data-i18n="btn_save_changes">Save Changes</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Academic Supervisor Modal (Part 4.2 API Guide) -->
+  <div class="modal-overlay" id="createSupervisorModal">
+    <div class="modal-card" style="max-width: 550px;">
+      <div class="modal-header">
+        <div class="card-header-left">
+          <div class="card-header-icon"><i class="bx bx-user-plus"></i></div>
+          <div>
+            <h3 class="card-title" style="font-size:1.15rem;" data-i18n="modal_create_supervisor_title">Create Academic Supervisor Account</h3>
+            <p class="card-subtitle" data-i18n="modal_create_supervisor_sub">Mint a new supervisor login for your faculty</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="App.closeCreateSupervisorModal()">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <form id="createSupervisorForm" onsubmit="App.saveSupervisorDetails(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:14px;">
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_name">Full Name</label>
+          <input type="text" id="supName" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required placeholder="Dr. Mona El-Sayed">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_email">Academic Email</label>
+          <input type="email" id="supEmail" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required placeholder="dr.mona@faculty-pharmacy.edu">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_phone">Phone Number</label>
+          <input type="text" id="supPhone" class="form-input" dir="ltr" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required placeholder="01001234567">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_syndicate_license">Syndicate License</label>
+            <input type="text" id="supLicense" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required placeholder="SYN-2026-88213">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_years_experience">Years of Experience</label>
+            <input type="number" id="supExperience" class="form-input" min="0" max="60" value="5" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_max_capacity">Max Intern Capacity</label>
+          <input type="number" id="supCapacity" class="form-input" min="1" max="50" value="10" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="App.closeCreateSupervisorModal()" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveSupervisor"><i class="bx bx-check"></i> <span data-i18n="btn_create_supervisor">Add Academic Supervisor</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- One-Time Password Display Modal -->
+  <div class="modal-overlay" id="supervisorPasswordModal">
+    <div class="modal-card" style="max-width: 480px; text-align:center;">
+      <div style="padding: 28px 24px;">
+        <div style="width:64px; height:64px; border-radius:50%; background:var(--success-light); color:var(--success); display:inline-flex; align-items:center; justify-content:center; font-size:2rem; margin-bottom:16px;">
+          <i class="bx bx-key"></i>
+        </div>
+        <h3 style="font-size:1.25rem; font-weight:800; margin-bottom:8px;" data-i18n="password_modal_title">Supervisor Account Minted</h3>
+        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:20px;" data-i18n="password_modal_msg">Please share this one-time generated password with the supervisor now. It will not be displayed again.</p>
+
+        <div style="background:var(--bg-input); border:2px dashed var(--primary); padding:14px; border-radius:var(--radius-md); font-family:monospace; font-size:1.3rem; font-weight:700; color:var(--primary); letter-spacing:2px; margin-bottom:20px; user-select:all;" id="generatedPasswordBox">
+          —
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:12px;">
+          <button class="btn btn-primary" onclick="App.copyGeneratedPassword()"><i class="bx bx-copy"></i> <span data-i18n="btn_copy_password">Copy Password</span></button>
+          <button class="btn btn-outline" onclick="App.closeSupervisorPasswordModal()" data-i18n="modal_close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Intern Placement Modal (Part 4.4 API Guide) -->
+  <div class="modal-overlay" id="assignInternModal">
+    <div class="modal-card" style="max-width: 550px;">
+      <div class="modal-header">
+        <div class="card-header-left">
+          <div class="card-header-icon"><i class="bx bx-user-check"></i></div>
+          <div>
+            <h3 class="card-title" style="font-size:1.15rem;" data-i18n="modal_assign_intern_title">Assign Intern to Supervisor & Pharmacy</h3>
+            <p class="card-subtitle" data-i18n="modal_assign_intern_sub">Set up internship assignment and supervisor mentorship</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="App.closeAssignInternModal()">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <form id="assignInternForm" onsubmit="App.submitInternshipAssignment(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="assignInternUserId">
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="table_col_intern">Intern</label>
+          <input type="text" id="assignInternName" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-card); font-weight:700;" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_training_program">Training Program</label>
+          <select id="assignProgramSelect" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+            <option value="">— Loading Programs —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_supervisor">Assigned Academic Supervisor</label>
+          <select id="assignSupervisorSelect" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+            <option value="">— Loading Supervisors —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_pharmacy">Partner Pharmacy & Branch</label>
+          <select id="assignPharmacySelect" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+            <option value="">— Loading Pharmacies —</option>
+          </select>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_start_date">Start Date</label>
+            <input type="date" id="assignStartDate" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_expected_end_date">Expected End Date</label>
+            <input type="date" id="assignEndDate" class="form-input" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="App.closeAssignInternModal()" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAssign"><i class="bx bx-check"></i> <span data-i18n="btn_assign_intern">Assign Intern</span></button>
         </div>
       </form>
     </div>

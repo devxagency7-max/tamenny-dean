@@ -26,13 +26,20 @@ const DeanApiService = {
 
     try {
       const response = await fetch(url, { ...options, headers });
+      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        return {
+          success: false,
+          status: response.status,
+          message: (data && data.message) || `HTTP error ${response.status}`,
+          errors: data && data.errors,
+          errorCode: data && data.errorCode
+        };
       }
-      return await response.json();
+      return data;
     } catch (err) {
       console.error(`[DeanApi Error] Endpoint ${endpoint} failed:`, err.message);
-      return null;
+      return { success: false, message: err.message };
     }
   },
 
@@ -62,6 +69,40 @@ const DeanApiService = {
   async getInternshipProgress() {
     const res = await this.request(DeanConfig.endpoints.internshipProgress);
     return (res && res.data) ? res.data : {};
+  },
+
+  // --- Supervisor Management (Part 4.2 API Guide) ---
+  async getSupervisors() {
+    const res = await this.request(DeanConfig.endpoints.supervisors);
+    return (res && Array.isArray(res.data)) ? res.data : [];
+  },
+
+  async createSupervisor(payload) {
+    const res = await this.request(DeanConfig.endpoints.supervisors, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return res;
+  },
+
+  // --- Training Programs (Part 4.3 API Guide) ---
+  async getTrainingPrograms() {
+    const res = await this.request(DeanConfig.endpoints.trainingPrograms);
+    return (res && Array.isArray(res.data)) ? res.data : [];
+  },
+
+  // --- Unassigned Queue & Internship Placement (Part 4.4 API Guide) ---
+  async getUnassignedInterns() {
+    const res = await this.request(DeanConfig.endpoints.unassignedInterns);
+    return (res && Array.isArray(res.data)) ? res.data : [];
+  },
+
+  async createInternshipAssignment(payload) {
+    const res = await this.request(DeanConfig.endpoints.internshipAssignments, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return res;
   },
 
   async getInterns(params = {}) {
