@@ -158,6 +158,26 @@ const DeanTranslations = {
     password_modal_title: 'Supervisor Account Minted',
     password_modal_msg: 'Please share this one-time generated password with the supervisor now. It will not be displayed again.',
     btn_copy_password: 'Copy Password',
+
+    // Supervisor Workspace (Part 5 & 7 API Guide)
+    nav_supervisor_interns: 'My Interns',
+    nav_supervisor_drafts: 'Clinical Drafts Review',
+    supervisor_interns_title: 'My Assigned Interns',
+    supervisor_interns_sub: 'Interns assigned under your academic supervision',
+    supervisor_drafts_title: 'Clinical Drafts Review Queue',
+    supervisor_drafts_sub: 'Review and approve intern clinical draft recommendations',
+    btn_approve_draft: 'Approve Draft',
+    btn_reject_draft: 'Reject / Feedback',
+    btn_evaluate: 'Evaluate Intern',
+    btn_verify_hours: 'Verify Hours',
+    eval_knowledge: 'Clinical Knowledge (1-5)',
+    eval_communication: 'Communication Skills (1-5)',
+    eval_ethics: 'Professional Ethics (1-5)',
+    eval_overall: 'Overall Rating (1-5)',
+    eval_comments: 'Supervisor Comments',
+    modal_eval_title: 'Submit Intern Periodic Evaluation',
+    reject_modal_title: 'Reject Draft with Feedback',
+    field_feedback: 'Supervisor Feedback / Clinical Guidance',
   },
 
   ar: {
@@ -169,6 +189,26 @@ const DeanTranslations = {
     nav_interns: 'سجل المتدربين',
     nav_profile: 'الملف الشخصي',
     nav_faculty: 'ملف الكلية',
+
+    // Supervisor Workspace (Part 5 & 7 API Guide)
+    nav_supervisor_interns: 'طلابي المتدربون',
+    nav_supervisor_drafts: 'مراجعة الروشتات والتوصيات',
+    supervisor_interns_title: 'سجل المتدربين المسندين لإشرافي',
+    supervisor_interns_sub: 'متابعة تدريب الطلاب المسندين لإشرافك الأكاديمي',
+    supervisor_drafts_title: 'طابور مراجعة الروشتات والتوصيات',
+    supervisor_drafts_sub: 'تدقيق واعتماد توصيات وصرف وتدخلات الطلاب الميدانية',
+    btn_approve_draft: 'اعتماد التوصية',
+    btn_reject_draft: 'رفض / توجيه',
+    btn_evaluate: 'تقييم شهري',
+    btn_verify_hours: 'توثيق الساعات',
+    eval_knowledge: 'المعرفة السريرية (1-5)',
+    eval_communication: 'مهارات التواصل (1-5)',
+    eval_ethics: 'الالتزام والأخلاقيات (1-5)',
+    eval_overall: 'التقييم العام (1-5)',
+    eval_comments: 'ملاحظات وتوجيهات المشرف',
+    modal_eval_title: 'تسجيل التقييم الأكاديمي للمتدرب',
+    reject_modal_title: 'إرجاع التوصية مع كتابة الملاحظات',
+    field_feedback: 'ملاحظات المشرف والتوجيه السريري',
 
     // Academic Supervisors & Placement (Part 4.2 & 4.4 API Guide)
     nav_supervisors: 'المشرفون الأكاديميون',

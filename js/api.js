@@ -170,6 +170,44 @@ const DeanApiService = {
     return (res && Array.isArray(res.data)) ? res.data : [];
   },
 
+  // --- Supervisor Endpoints (Part 5 & 7 API Guide) ---
+  async getSupervisorMyInterns() {
+    const res = await this.request(DeanConfig.endpoints.supervisorMyInterns);
+    return (res && Array.isArray(res.data)) ? res.data : [];
+  },
+
+  async getSupervisorDrafts(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `${DeanConfig.endpoints.supervisorDrafts}${queryString ? '?' + queryString : ''}`;
+    const res = await this.request(endpoint);
+    if (res && res.data && Array.isArray(res.data.items)) return res.data.items;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
+  },
+
+  async approveSupervisorDraft(draftId, decision, feedback = '') {
+    const res = await this.request(DeanConfig.endpoints.supervisorApproveDraft(draftId), {
+      method: 'POST',
+      body: JSON.stringify({ decision, feedback })
+    });
+    return res;
+  },
+
+  async verifySupervisorActivity(logId) {
+    const res = await this.request(DeanConfig.endpoints.supervisorVerifyActivity(logId), {
+      method: 'POST'
+    });
+    return res;
+  },
+
+  async submitSupervisorEvaluation(payload) {
+    const res = await this.request(DeanConfig.endpoints.supervisorEvaluations, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return res;
+  },
+
   _normalizeInternSummary(item) {
     if (!item) return item;
     return {

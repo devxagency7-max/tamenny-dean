@@ -91,27 +91,38 @@ const LoginApp = {
         return;
       }
 
-      // 2. Verify the account is a registered, active Faculty Dean before granting access
+      // 2. Verify account role (Dean or Supervisor)
+      let userRole = 'dean';
       let deanProfile = null;
       try {
         const meRes = await fetch(`${DeanConfig.apiBaseUrl}${DeanConfig.endpoints.deanMe}`, {
           headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
         });
         if (meRes.ok) {
+          userRole = 'dean';
           const meData = await meRes.json();
           deanProfile = meData && meData.data ? meData.data : null;
         } else if (meRes.status === 401 || meRes.status === 403) {
-          this.showToast('هذا الحساب غير مسجل كعميد كلية على منصة طَمّني.', 'error');
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalBtnHtml;
-          return;
+          // Check if this account is a Supervisor
+          const supRes = await fetch(`${DeanConfig.apiBaseUrl}${DeanConfig.endpoints.supervisorMyInterns}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+          });
+          if (supRes.ok) {
+            userRole = 'supervisor';
+          } else {
+            this.showToast('هذا الحساب غير مسجل كعميد كلية أو مشرف أكاديمي على منصة طَمّني.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+            return;
+          }
         }
       } catch (profileErr) {
-        console.warn('[Dean Login] /dean/me unreachable, proceeding with Firebase session only:', profileErr.message);
+        console.warn('[Login] Verification check unreachable, proceeding with Firebase session:', profileErr.message);
       }
 
-      // Store credentials & token
+      // Store credentials & token & role
       localStorage.setItem('tameny_dean_token', token);
+      localStorage.setItem('tameny_user_role', userRole);
       localStorage.setItem('tameny_dean_session_at', new Date().toISOString());
       localStorage.setItem('tameny_dean_email', email);
       localStorage.removeItem('tameny_dean_demo_mode');
@@ -119,7 +130,10 @@ const LoginApp = {
         localStorage.setItem('tameny_dean_profile', JSON.stringify(deanProfile));
       }
 
-      this.showToast('تم التحقق بنجاح — جاري الدخول للمرصد', 'success');
+      const welcomeMsg = userRole === 'supervisor'
+        ? 'تم التحقق بنجاح — مرحباً بك في بوابة المشرف الأكاديمي'
+        : 'تم التحقق بنجاح — جاري الدخول للمرصد الأكاديمي';
+      this.showToast(welcomeMsg, 'success');
 
       setTimeout(() => {
         window.location.href = 'index.html';

@@ -45,41 +45,61 @@
 
       <!-- Sidebar Navigation Menu -->
       <nav class="sidebar-nav">
-        <span class="nav-section-title" data-i18n="nav_section_audit">OBSERVABILITY & AUDIT</span>
+        <span class="nav-section-title dean-only-nav" data-i18n="nav_section_audit">OBSERVABILITY & AUDIT</span>
 
-        <a class="nav-item active" data-view="dashboard">
+        <a class="nav-item dean-only-nav active" data-view="dashboard">
           <i class="bx bxs-dashboard"></i>
           <span data-i18n="nav_dashboard">Dashboard</span>
         </a>
 
-        <a class="nav-item" data-view="interns">
+        <a class="nav-item dean-only-nav" data-view="interns">
           <i class="bx bxs-user-detail"></i>
           <span data-i18n="nav_interns">Interns Directory</span>
           <span class="nav-item-badge" id="sidebarInternsCount">—</span>
         </a>
 
-        <a class="nav-item" data-view="unassigned">
+        <a class="nav-item dean-only-nav" data-view="unassigned">
           <i class="bx bxs-user-plus"></i>
           <span data-i18n="nav_unassigned">Unassigned Queue</span>
           <span class="nav-item-badge" id="sidebarUnassignedCount">0</span>
         </a>
 
-        <a class="nav-item" data-view="supervisors">
+        <a class="nav-item dean-only-nav" data-view="supervisors">
           <i class="bx bxs-group"></i>
           <span data-i18n="nav_supervisors">Academic Supervisors</span>
           <span class="nav-item-badge" id="sidebarSupervisorsCount">—</span>
         </a>
 
+        <!-- Supervisor Navigation Items -->
+        <span class="nav-section-title supervisor-only-nav" style="display:none;">SUPERVISOR WORKSPACE</span>
+
+        <a class="nav-item supervisor-only-nav" data-view="supervisor-interns" style="display:none;">
+          <i class="bx bxs-user-check"></i>
+          <span data-i18n="nav_supervisor_interns">My Interns</span>
+          <span class="nav-item-badge" id="sidebarSupInternsCount">0</span>
+        </a>
+
+        <a class="nav-item supervisor-only-nav" data-view="supervisor-drafts" style="display:none;">
+          <i class="bx bxs-file-blank"></i>
+          <span data-i18n="nav_supervisor_drafts">Clinical Drafts Review</span>
+          <span class="nav-item-badge" id="sidebarSupDraftsCount">0</span>
+        </a>
+
         <span class="nav-section-title" data-i18n="nav_section_system">SYSTEM</span>
 
-        <a class="nav-item" data-view="profile">
+        <a class="nav-item dean-only-nav" data-view="profile">
           <i class="bx bxs-user-badge"></i>
           <span data-i18n="nav_profile">Profile</span>
         </a>
 
-        <a class="nav-item" data-view="settings">
+        <a class="nav-item dean-only-nav" data-view="settings">
           <i class="bx bxs-institution"></i>
           <span data-i18n="nav_faculty">Faculty Profile</span>
+        </a>
+
+        <a class="nav-item supervisor-only-nav" onclick="App.logout()" style="display:none;">
+          <i class="bx bx-log-out"></i>
+          <span data-i18n="btn_logout">Sign Out</span>
         </a>
       </nav>
 
@@ -603,6 +623,75 @@
         </section>
 
         <!-- ================================================================
+             SECTION: SUPERVISOR - MY ASSIGNED INTERNS
+             ================================================================ -->
+        <section class="view-section" id="view-supervisor-interns">
+          <div class="card-panel">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bxs-user-check"></i></div>
+                <div>
+                  <h3 class="card-title" data-i18n="supervisor_interns_title">My Assigned Interns</h3>
+                  <p class="card-subtitle" data-i18n="supervisor_interns_sub">Interns assigned under your academic supervision</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="margin-top: 16px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="table_col_intern">Intern</th>
+                    <th data-i18n="label_faculty">Faculty / University</th>
+                    <th>Training Hours</th>
+                    <th>Assignment Period</th>
+                    <th data-i18n="table_col_status">Status</th>
+                    <th data-i18n="table_col_actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="supInternsTableBody">
+                  <!-- Injected via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION: SUPERVISOR - CLINICAL DRAFTS REVIEW QUEUE
+             ================================================================ -->
+        <section class="view-section" id="view-supervisor-drafts">
+          <div class="card-panel">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div class="card-header-left">
+                <div class="card-header-icon"><i class="bx bxs-file-blank"></i></div>
+                <div>
+                  <h3 class="card-title" data-i18n="supervisor_drafts_title">Clinical Drafts Review Queue</h3>
+                  <p class="card-subtitle" data-i18n="supervisor_drafts_sub">Review and approve intern clinical draft recommendations</p>
+                </div>
+              </div>
+
+              <!-- Draft Status Tabs -->
+              <div class="quick-filter-chips">
+                <button class="chip-filter active" id="chipDraftPending" onclick="App.filterSupervisorDrafts('PendingSupervisorReview')">
+                  Pending Review
+                </button>
+                <button class="chip-filter" id="chipDraftAccepted" onclick="App.filterSupervisorDrafts('Accepted')">
+                  Approved
+                </button>
+                <button class="chip-filter" id="chipDraftRejected" onclick="App.filterSupervisorDrafts('Rejected')">
+                  Rejected
+                </button>
+              </div>
+            </div>
+
+            <div class="audit-list" id="supDraftsList" style="margin-top: 20px;">
+              <!-- Injected via app.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
              SECTION 4: SETTINGS & FACULTY PROFILE
              ================================================================ -->
         <section class="view-section" id="view-settings">
@@ -937,6 +1026,92 @@
         <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
           <button type="button" class="btn btn-outline" onclick="App.closeAssignInternModal()" data-i18n="btn_cancel">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btnSubmitAssign"><i class="bx bx-check"></i> <span data-i18n="btn_assign_intern">Assign Intern</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supervisor Evaluation Modal (Part 5 API Guide) -->
+  <div class="modal-overlay" id="supervisorEvaluationModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="card-header-left">
+          <div class="card-header-icon"><i class="bx bx-award"></i></div>
+          <div>
+            <h3 class="card-title" style="font-size:1.15rem;" data-i18n="modal_eval_title">Submit Intern Periodic Evaluation</h3>
+            <p class="card-subtitle" id="evalInternSubtitle">Periodic Competency Assessment</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="App.closeSupervisorEvaluationModal()">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <form id="supervisorEvaluationForm" onsubmit="App.submitSupervisorEvaluation(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="evalInternAssignmentId">
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="eval_knowledge">Clinical Knowledge (1-5)</label>
+            <input type="number" id="evalKnowledgeScore" min="1" max="5" step="0.5" value="4.5" class="form-input" style="width:100%; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="eval_communication">Communication Skills (1-5)</label>
+            <input type="number" id="evalCommunicationScore" min="1" max="5" step="0.5" value="4.5" class="form-input" style="width:100%; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="eval_ethics">Professional Ethics (1-5)</label>
+            <input type="number" id="evalEthicsScore" min="1" max="5" step="0.5" value="5" class="form-input" style="width:100%; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input);" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="eval_overall">Overall Rating (1-5)</label>
+            <input type="number" id="evalOverallScore" min="1" max="5" step="0.5" value="4.7" class="form-input" style="width:100%; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); font-weight:700; color:var(--primary);" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="eval_comments">Supervisor Comments</label>
+          <textarea id="evalComments" class="form-input" rows="3" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); resize:vertical;" placeholder="Write clinical guidance and feedback for the intern..."></textarea>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="App.closeSupervisorEvaluationModal()" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitEval"><i class="bx bx-check"></i> <span data-i18n="btn_evaluate">Submit Evaluation</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reject Draft Modal -->
+  <div class="modal-overlay" id="rejectDraftModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="card-header-left">
+          <div class="card-header-icon" style="color:var(--danger);"><i class="bx bx-x-circle"></i></div>
+          <div>
+            <h3 class="card-title" style="font-size:1.15rem;" data-i18n="reject_modal_title">Reject Draft with Feedback</h3>
+            <p class="card-subtitle" data-i18n="field_feedback">Supervisor Feedback / Clinical Guidance</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="App.closeRejectDraftModal()">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+
+      <form id="rejectDraftForm" onsubmit="App.confirmRejectDraft(event)" class="modal-body" style="padding: 24px; display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="rejectDraftId">
+
+        <div class="form-group">
+          <label class="form-label" style="display:block; margin-bottom:4px; font-weight:600; font-size:0.85rem;" data-i18n="field_feedback">Clinical Feedback</label>
+          <textarea id="rejectDraftFeedback" class="form-input" rows="4" style="width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-input); resize:vertical;" required placeholder="Explain why this draft is rejected or what medication adjustments are needed..."></textarea>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:0; border:none; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="App.closeRejectDraftModal()" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" class="btn btn-outline-danger" id="btnConfirmReject"><i class="bx bx-x"></i> Reject Draft</button>
         </div>
       </form>
     </div>

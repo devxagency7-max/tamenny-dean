@@ -43,5 +43,12 @@ const DeanConfig = {
     internActivityLogs: (id) => `/dean/interns/${id}/activity-logs`,
     internChats: (id) => `/dean/interns/${id}/chats`,
     partnerPharmacies: '/dean/partner-pharmacies',
+
+    // Supervisor Endpoints (Part 5 & 7 API Guide)
+    supervisorMyInterns: '/supervisor/my-interns',
+    supervisorDrafts: '/supervisor/drafts',
+    supervisorApproveDraft: (id) => `/supervisor/drafts/${id}/approve`,
+    supervisorVerifyActivity: (logId) => `/supervisor/activities/${logId}/verify`,
+    supervisorEvaluations: '/supervisor/evaluations',
   }
 };

@@ -24,11 +24,32 @@ const App = {
 
   async init() {
     if (!this.requireAuth()) return;
+    this.userRole = localStorage.getItem('tameny_user_role') || 'dean';
     this.initTheme();
     this.initDirection();
+    this.setupRoleUI();
     this.bindEvents();
     this.handleRoute();
     await this.loadInitialData();
+  },
+
+  setupRoleUI() {
+    this.userRole = localStorage.getItem('tameny_user_role') || 'dean';
+    const isSupervisor = this.userRole === 'supervisor';
+    
+    document.querySelectorAll('.dean-only-nav').forEach(el => {
+      el.style.display = isSupervisor ? 'none' : (el.classList.contains('nav-section-title') ? 'block' : 'flex');
+    });
+
+    document.querySelectorAll('.supervisor-only-nav').forEach(el => {
+      el.style.display = isSupervisor ? (el.classList.contains('nav-section-title') ? 'block' : 'flex') : 'none';
+    });
+
+    const lang = document.documentElement.getAttribute('lang') || 'en';
+    const topRole = document.getElementById('topbarDeanRole');
+    if (topRole && isSupervisor) {
+      topRole.textContent = lang === 'ar' ? 'مشرف أكاديمي' : 'Academic Supervisor';
+    }
   },
 
   // --- Route Guard ---
@@ -221,7 +242,15 @@ const App = {
   },
 
   handleRoute() {
-    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    let hash = window.location.hash.replace('#', '');
+    if (!hash) {
+      hash = this.userRole === 'supervisor' ? 'supervisor-interns' : 'dashboard';
+    }
+
+    if (this.userRole === 'supervisor' && ['dashboard', 'interns', 'unassigned', 'supervisors', 'settings'].includes(hash)) {
+      hash = 'supervisor-interns';
+    }
+
     if (hash.startsWith('intern/')) {
       const internId = hash.replace('intern/', '');
       this.openInternProfile(internId, false);
@@ -266,14 +295,23 @@ const App = {
     } else if (viewId === 'interns') {
       this.renderInternsTable();
     } else if (viewId === 'profile') {
-      this.renderDeanProfile();
+      if (this.userRole === 'supervisor') {
+        this.renderSupervisorProfile();
+      } else {
+        this.renderDeanProfile();
+      }
+    } else if (viewId === 'supervisor-interns') {
+      this.renderSupervisorInterns();
+    } else if (viewId === 'supervisor-drafts') {
+      this.renderSupervisorDrafts();
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
   navigateBack() {
-    this.navigateTo(this.previousView || 'dashboard');
+    const fallback = this.userRole === 'supervisor' ? 'supervisor-interns' : 'dashboard';
+    this.navigateTo(this.previousView || fallback);
   },
 
   updateHeaderTitle(viewId) {
@@ -288,8 +326,10 @@ const App = {
         interns: { title: 'Interns Directory', sub: '' },
         unassigned: { title: 'Unassigned Placement Queue', sub: '' },
         supervisors: { title: 'Academic Supervisors Directory', sub: '' },
+        'supervisor-interns': { title: 'My Interns', sub: 'Interns assigned under your academic supervision' },
+        'supervisor-drafts': { title: 'Clinical Drafts Review', sub: 'Review and approve intern clinical drafts' },
         'intern-detail': { title: 'Student Clinical Dossier', sub: '' },
-        profile: { title: 'Dean Profile', sub: '' },
+        profile: { title: this.userRole === 'supervisor' ? 'Supervisor Profile' : 'Dean Profile', sub: '' },
         settings: { title: 'Faculty Settings', sub: '' },
       },
       ar: {
@@ -297,13 +337,15 @@ const App = {
         interns: { title: 'سجل المتدربين', sub: '' },
         unassigned: { title: 'قائمة انتظار التسكين', sub: '' },
         supervisors: { title: 'المشرفون الأكاديميون', sub: '' },
+        'supervisor-interns': { title: 'المتدربون التابعون لي', sub: 'المتدربون الموزعون تحت إشرافي الأكاديمي' },
+        'supervisor-drafts': { title: 'مراجعة المسودات الطبية', sub: 'فحص واعتماد مسودات وتوصيات المتدربين السريرية' },
         'intern-detail': { title: 'الملف الطبي للمتدرب', sub: '' },
-        profile: { title: 'الملف الشخصي للعميد', sub: '' },
+        profile: { title: this.userRole === 'supervisor' ? 'الملف الشخصي للمشرف' : 'الملف الشخصي للعميد', sub: '' },
         settings: { title: 'ملف الكلية', sub: '' },
       }
     };
 
-    const current = (titles[lang] && titles[lang][viewId]) || titles.en[viewId] || titles.en.dashboard;
+    const current = (titles[lang] && titles[lang][viewId]) || (titles.en && titles.en[viewId]) || { title: '', sub: '' };
     titleEl.textContent = current.title;
     if (subEl) {
       subEl.textContent = current.sub;
@@ -312,12 +354,20 @@ const App = {
   },
 
   async loadInitialData() {
-    this.renderDeanProfile();
-    this.renderDashboard();
-    this.renderInternsTable();
-    this.renderUnassignedInterns();
-    this.renderSupervisors();
-    this.refreshDeanProfileFromBackend();
+    if (this.userRole === 'supervisor') {
+      this.renderSupervisorProfile();
+      await Promise.all([
+        this.renderSupervisorInterns(),
+        this.renderSupervisorDrafts('PendingSupervisorReview')
+      ]);
+    } else {
+      this.renderDeanProfile();
+      this.renderDashboard();
+      this.renderInternsTable();
+      this.renderUnassignedInterns();
+      this.renderSupervisors();
+      this.refreshDeanProfileFromBackend();
+    }
   },
 
   async refreshDeanProfileFromBackend() {
@@ -470,6 +520,9 @@ const App = {
 
   logout() {
     localStorage.removeItem('tameny_dean_token');
+    localStorage.removeItem('tameny_user_role');
+    localStorage.removeItem('tameny_dean_email');
+    localStorage.removeItem('tameny_dean_profile');
     localStorage.removeItem('tameny_dean_session_at');
     localStorage.removeItem('tameny_dean_demo_mode');
     this.showToast('تم تسجيل الخروج بنجاح', 'info');
@@ -1414,6 +1467,328 @@ const App = {
     document.querySelectorAll('.detail-pane').forEach(pane => {
       pane.classList.toggle('active', pane.id === targetId);
     });
+  },
+
+  // --- Supervisor Workspace Methods (Part 5 & 7 API Guide) ---
+  async renderSupervisorInterns() {
+    const tbody = document.getElementById('supInternsTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:32px; color:var(--text-muted);">
+          <i class="bx bx-loader-alt bx-spin" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+          جاري تحميل المتدربين التابعين لإشرافك...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const interns = await DeanApiService.getSupervisorMyInterns();
+      const badge = document.getElementById('sidebarSupInternsCount');
+      if (badge) {
+        badge.textContent = Array.isArray(interns) ? interns.length : 0;
+        badge.style.display = (Array.isArray(interns) && interns.length > 0) ? 'inline-block' : 'none';
+      }
+
+      if (!interns || interns.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; padding:48px 24px; color:var(--text-muted);">
+              <i class="bx bx-user-x" style="font-size:36px; opacity:0.4; margin-bottom:8px; display:block;"></i>
+              <p style="font-weight:600; margin-bottom:4px;">لا يوجد متدربون مسندون حالياً</p>
+              <span style="font-size:0.85rem;">سيظهر هنا المتدربون بمجرد قيام عميد الكلية بتسكينهم تحت إشرافك</span>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      if (interns[0]) {
+        const sideFaculty = document.getElementById('sidebarFacultyName');
+        const sideUni = document.getElementById('sidebarFacultyUni');
+        if (sideFaculty && interns[0].facultyName) sideFaculty.textContent = interns[0].facultyName;
+        if (sideUni && interns[0].universityName) sideUni.textContent = interns[0].universityName;
+      }
+
+      tbody.innerHTML = interns.map(item => {
+        const name = item.internName || 'متدرب';
+        const email = item.internEmail || '';
+        const phone = item.internPhone || '';
+        const uni = item.universityName || '';
+        const faculty = item.facultyName || '';
+        const logged = item.loggedHours ?? 0;
+        const verified = item.verifiedHours ?? 0;
+        const status = item.status || 'Active';
+        const assignmentId = item.assignmentId || item.id || '';
+        const startDate = item.startDate ? new Date(item.startDate).toLocaleDateString() : '—';
+        const endDate = item.expectedEndDate ? new Date(item.expectedEndDate).toLocaleDateString() : '—';
+        const initial = (name || 'I').trim().charAt(0).toUpperCase();
+
+        return `
+          <tr>
+            <td>
+              <div class="table-user-cell">
+                <div class="avatar-sm">${initial}</div>
+                <div>
+                  <div style="font-weight:700; color:var(--text-heading);">${name}</div>
+                  <div style="font-size:0.8rem; color:var(--text-muted);">${email} ${phone ? '• ' + phone : ''}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:0.88rem; font-weight:600;">${faculty || uni || '—'}</div>
+              <div style="font-size:0.78rem; color:var(--text-muted);">${uni || ''}</div>
+            </td>
+            <td>
+              <div style="font-weight:700; font-size:0.9rem; color:var(--primary);">${verified} / ${logged} ساعة</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">معتمدة من إجمالي المسجل</div>
+            </td>
+            <td>
+              <div style="font-size:0.82rem;">${startDate} - ${endDate}</div>
+            </td>
+            <td>
+              <span class="badge badge-success">${status}</span>
+            </td>
+            <td>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:0.8rem;" onclick="App.openSupervisorEvaluationModal('${assignmentId}', '${name.replace(/'/g, "\\'")}')">
+                  <i class="bx bx-award"></i> تقييم دوري
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      console.error('[SupervisorInterns]', err);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding:32px; color:var(--danger);">
+            <i class="bx bx-error-circle" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+            حدث خطأ أثناء تحميل المتدربين: ${err.message || 'تعذر الاتصال'}
+          </td>
+        </tr>
+      `;
+    }
+  },
+
+  currentSupervisorDraftFilter: 'PendingSupervisorReview',
+
+  filterSupervisorDrafts(status) {
+    this.currentSupervisorDraftFilter = status;
+    const chips = {
+      'PendingSupervisorReview': 'chipDraftPending',
+      'Accepted': 'chipDraftAccepted',
+      'Rejected': 'chipDraftRejected'
+    };
+    ['chipDraftPending', 'chipDraftAccepted', 'chipDraftRejected'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('active', id === chips[status]);
+    });
+    this.renderSupervisorDrafts(status);
+  },
+
+  async renderSupervisorDrafts(status = null) {
+    if (!status) status = this.currentSupervisorDraftFilter;
+    const listEl = document.getElementById('supDraftsList');
+    if (!listEl) return;
+
+    listEl.innerHTML = `
+      <div style="text-align:center; padding:40px; color:var(--text-muted);">
+        <i class="bx bx-loader-alt bx-spin" style="font-size:28px; margin-bottom:8px; display:block;"></i>
+        جاري تحميل المسودات السريرية...
+      </div>
+    `;
+
+    try {
+      const drafts = await DeanApiService.getSupervisorDrafts({ status });
+      const badge = document.getElementById('sidebarSupDraftsCount');
+      if (badge && status === 'PendingSupervisorReview') {
+        badge.textContent = Array.isArray(drafts) ? drafts.length : 0;
+        badge.style.display = (Array.isArray(drafts) && drafts.length > 0) ? 'inline-block' : 'none';
+      }
+
+      if (!drafts || drafts.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state-box" style="padding:48px 24px; text-align:center; color:var(--text-muted);">
+            <i class="bx bx-file-blank" style="font-size:44px; opacity:0.35; margin-bottom:12px; display:block;"></i>
+            <h4 style="font-weight:700; margin-bottom:4px;">لا توجد مسودات في هذه القائمة</h4>
+            <p style="font-size:0.85rem; max-width:400px; margin:0 auto;">سيتم إدراج التوصيات العلاجية هنا بمجرد تقديمها من المتدربين التابعين لإشرافك.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = drafts.map(d => {
+        const internName = d.internName || 'متدرب';
+        const date = d.createdAt || d.submittedAt ? new Date(d.createdAt || d.submittedAt).toLocaleDateString() : '—';
+        const title = d.caseTitle || d.diagnosis || d.patientCase || 'توصية علاجية / استشارة سريرية';
+        const meds = d.medicationPlan || d.recommendation || d.notes || d.description || 'لا توجد تفاصيل إضافية';
+        const draftId = d.id;
+        const currentStatus = d.status || status;
+
+        let statusBadge = `<span class="badge badge-warning">قيد المراجعة</span>`;
+        if (currentStatus === 'Accepted') {
+          statusBadge = `<span class="badge badge-success"><i class="bx bx-check"></i> معتمدة</span>`;
+        } else if (currentStatus === 'Rejected') {
+          statusBadge = `<span class="badge badge-danger"><i class="bx bx-x"></i> مرفوضة</span>`;
+        }
+
+        let actionButtons = '';
+        if (currentStatus === 'PendingSupervisorReview' || (!String(currentStatus).includes('Accepted') && !String(currentStatus).includes('Rejected'))) {
+          actionButtons = `
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button class="btn btn-primary" style="padding:6px 14px; font-size:0.85rem;" onclick="App.approveSupervisorDraft('${draftId}')">
+                <i class="bx bx-check"></i> اعتماد المسودة
+              </button>
+              <button class="btn btn-outline-danger" style="padding:6px 14px; font-size:0.85rem;" onclick="App.openRejectDraftModal('${draftId}')">
+                <i class="bx bx-x"></i> رفض مع ملاحظات
+              </button>
+            </div>
+          `;
+        } else if (d.supervisorFeedback) {
+          actionButtons = `
+            <div style="margin-top:10px; padding:10px 14px; background:var(--bg-canvas); border-radius:var(--radius-sm); border:1px solid var(--border-color); font-size:0.82rem;">
+              <strong>ملاحظات المشرف:</strong> ${d.supervisorFeedback}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="audit-card-item" style="padding:18px; margin-bottom:12px; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-card); display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="font-weight:700; font-size:1.02rem; color:var(--text-heading);">${title}</span>
+                  ${statusBadge}
+                </div>
+                <div style="font-size:0.82rem; color:var(--text-muted);">
+                  المتدرب: <strong>${internName}</strong> • التاريخ: ${date}
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size:0.88rem; line-height:1.6; color:var(--text-body); background:var(--bg-canvas); padding:12px; border-radius:var(--radius-sm); white-space:pre-wrap;">${meds}</div>
+
+            ${actionButtons}
+          </div>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error('[SupervisorDrafts]', err);
+      listEl.innerHTML = `
+        <div style="text-align:center; padding:32px; color:var(--danger);">
+          <i class="bx bx-error-circle" style="font-size:28px; margin-bottom:8px; display:block;"></i>
+          حدث خطأ أثناء تحميل المسودات: ${err.message || 'تعذر الاتصال'}
+        </div>
+      `;
+    }
+  },
+
+  async approveSupervisorDraft(draftId) {
+    try {
+      this.showToast('جاري اعتماد المسودة الطبية...', 'info');
+      await DeanApiService.approveSupervisorDraft(draftId, 'Accepted', '');
+      this.showToast('تم اعتماد المسودة الطبية بنجاح ✅', 'success');
+      this.renderSupervisorDrafts();
+    } catch (err) {
+      this.showToast(err.message || 'تعذر اعتماد المسودة', 'error');
+    }
+  },
+
+  openRejectDraftModal(draftId) {
+    const input = document.getElementById('rejectDraftId');
+    const fb = document.getElementById('rejectDraftFeedback');
+    const modal = document.getElementById('rejectDraftModal');
+    if (input) input.value = draftId;
+    if (fb) fb.value = '';
+    if (modal) modal.classList.add('active');
+  },
+
+  closeRejectDraftModal() {
+    const modal = document.getElementById('rejectDraftModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  async confirmRejectDraft(e) {
+    e.preventDefault();
+    const draftId = document.getElementById('rejectDraftId')?.value;
+    const feedback = document.getElementById('rejectDraftFeedback')?.value;
+    if (!draftId) return;
+
+    try {
+      this.showToast('جاري إرسال الرفض والملاحظات...', 'info');
+      await DeanApiService.approveSupervisorDraft(draftId, 'Rejected', feedback);
+      this.closeRejectDraftModal();
+      this.showToast('تم رفض المسودة وإرسال الملاحظات للمتدرب بنجاح', 'success');
+      this.renderSupervisorDrafts();
+    } catch (err) {
+      this.showToast(err.message || 'تعذر رفض المسودة', 'error');
+    }
+  },
+
+  openSupervisorEvaluationModal(assignmentId, internName) {
+    const inputId = document.getElementById('evalInternAssignmentId');
+    const sub = document.getElementById('evalInternSubtitle');
+    const modal = document.getElementById('supervisorEvaluationModal');
+    if (inputId) inputId.value = assignmentId;
+    if (sub) sub.textContent = `التقييم الدوري للمتدرب: ${internName}`;
+    if (modal) modal.classList.add('active');
+  },
+
+  closeSupervisorEvaluationModal() {
+    const modal = document.getElementById('supervisorEvaluationModal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  async submitSupervisorEvaluation(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitEval');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> جاري الحفظ...';
+    }
+
+    try {
+      const payload = {
+        internshipAssignmentId: document.getElementById('evalInternAssignmentId')?.value,
+        knowledgeScore: parseFloat(document.getElementById('evalKnowledgeScore')?.value || '4'),
+        communicationScore: parseFloat(document.getElementById('evalCommunicationScore')?.value || '4'),
+        ethicsScore: parseFloat(document.getElementById('evalEthicsScore')?.value || '5'),
+        overallRating: parseFloat(document.getElementById('evalOverallScore')?.value || '4.5'),
+        comments: document.getElementById('evalComments')?.value || ''
+      };
+
+      await DeanApiService.submitSupervisorEvaluation(payload);
+      this.closeSupervisorEvaluationModal();
+      this.showToast('تم تسجيل التقييم الدوري بنجاح ✅', 'success');
+      this.renderSupervisorInterns();
+    } catch (err) {
+      this.showToast(err.message || 'تعذر تسجيل التقييم', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+  },
+
+  renderSupervisorProfile() {
+    const email = localStorage.getItem('tameny_dean_email') || 'supervisor@tamenny.com';
+    const topAvatar = document.getElementById('topbarDeanAvatar');
+    const topName = document.getElementById('topbarDeanName');
+    const topRole = document.getElementById('topbarDeanRole');
+    const sideFacultyName = document.getElementById('sidebarFacultyName');
+    const sideFacultyUni = document.getElementById('sidebarFacultyUni');
+
+    if (topAvatar) topAvatar.textContent = (email.charAt(0) || 'S').toUpperCase();
+    if (topName) topName.textContent = email.split('@')[0];
+    if (topRole) topRole.textContent = 'Academic Supervisor';
+    if (sideFacultyName) sideFacultyName.textContent = 'منصة المشرف الأكاديمي';
+    if (sideFacultyUni) sideFacultyUni.textContent = 'إشراف التدريب السريري';
   },
 
   // --- Export / Print Feature ---
