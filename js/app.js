@@ -337,7 +337,7 @@ const App = {
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        return { ...DeanConfig.currentDean, ...this._normalizeDeanProfile(parsed) };
+        return { ...parsed };
       } catch (e) {
         return DeanConfig.currentDean;
       }
@@ -347,13 +347,21 @@ const App = {
 
   _normalizeDeanProfile(raw) {
     if (!raw) return {};
+    const lang = document.documentElement.getAttribute('lang') || 'en';
     const normalized = { ...raw };
-    if (raw.university && typeof raw.university === 'object') {
-      normalized.university = raw.university.nameAr || raw.university.nameEn;
+    if (raw.universityName) {
+      normalized.university = raw.universityName;
+    } else if (raw.university && typeof raw.university === 'object') {
+      normalized.university = (lang === 'en' ? raw.university.nameEn : raw.university.nameAr) || raw.university.nameAr || raw.university.nameEn;
     }
-    if (raw.faculty && typeof raw.faculty === 'object') {
-      normalized.faculty = raw.faculty.nameAr || raw.faculty.nameEn;
+    if (raw.facultyName) {
+      normalized.faculty = raw.facultyName;
+    } else if (raw.faculty && typeof raw.faculty === 'object') {
+      normalized.faculty = (lang === 'en' ? raw.faculty.nameEn : raw.faculty.nameAr) || raw.faculty.nameAr || raw.faculty.nameEn;
       normalized.facultyId = raw.faculty.id || normalized.facultyId;
+    }
+    if (raw.academicTitle) {
+      normalized.title = raw.academicTitle;
     }
     return normalized;
   },
@@ -361,18 +369,20 @@ const App = {
   renderDeanProfile() {
     const dean = this.getStoredDeanData();
     const lang = document.documentElement.getAttribute('lang') || 'en';
-    const name = lang === 'en' ? 'Prof. Dr. Khaled El-Sayed' : (dean.name || DeanConfig.currentDean.name);
-    const university = lang === 'en' ? 'Cairo University' : (dean.university || 'جامعة القاهرة');
-    const faculty = lang === 'en' ? 'Faculty of Pharmacy' : (dean.faculty || 'كلية الصيدلة');
-    const avatar = 'K';
+    const name = dean.name || dean.fullName || DeanConfig.currentDean.name;
+    const university = dean.university || dean.universityName || DeanConfig.currentDean.university;
+    const faculty = dean.faculty || dean.facultyName || DeanConfig.currentDean.faculty;
+    const title = dean.academicTitle || dean.title || (lang === 'en' ? 'Dean of Faculty' : 'عميد الكلية');
+    const degree = dean.degree || DeanConfig.currentDean.degree;
+    const avatar = (name || 'D').trim().charAt(0).toUpperCase();
 
     // Topbar Profile
     const topAvatar = document.getElementById('topbarDeanAvatar');
     const topName = document.getElementById('topbarDeanName');
     const topRole = document.getElementById('topbarDeanRole');
     if (topAvatar) topAvatar.textContent = avatar;
-    if (topName) topName.textContent = lang === 'en' ? 'Prof. Dr. Khaled El-Sayed' : name.split(' ').slice(0, 3).join(' ');
-    if (topRole) topRole.textContent = lang === 'en' ? 'Dean of Faculty' : (dean.title || 'عميد الكلية');
+    if (topName) topName.textContent = name;
+    if (topRole) topRole.textContent = title;
 
     // Sidebar Faculty/University Badge
     const sideFacultyName = document.getElementById('sidebarFacultyName');
@@ -389,9 +399,6 @@ const App = {
     const pPhone = document.getElementById('profileDeanPhone');
     const pOffice = document.getElementById('profileDeanOffice');
     const pInstitution = document.getElementById('profileDeanInstitution');
-
-    const title = lang === 'en' ? 'Dean of Faculty of Pharmacy' : (dean.title || 'عميد كلية الصيدلة');
-    const degree = lang === 'en' ? 'Professor of Biochemistry & Pharmaceutical Control' : (dean.degree || 'أستاذ الكيمياء الحيوية والرقابة الدوائية');
 
     if (pAvatar) pAvatar.textContent = avatar;
     if (pName) pName.textContent = name;
